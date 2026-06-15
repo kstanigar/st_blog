@@ -5,7 +5,32 @@
 
 ## Current Priorities
 
-_No active priorities. Add new entries below this line, newest at top._
+### 2026-06-15 — GitHub Pages Deployment Fix
+**Status:** 🔄 In Progress
+
+**Problem:** Site at `kstanigar.github.io/st_blog/` returns 404 on `main.tsx` — Vite project needs to be built before deploying; raw source files cannot be served directly.
+
+**Task List:**
+- [x] Document plan in priorities.md
+- [ ] Add `base: '/st_blog/'` to `vite.config.ts`
+- [ ] Create `.github/workflows/deploy.yml` GitHub Actions workflow
+- [ ] Run `pnpm run build` locally to verify no build errors
+- [ ] Commit and push
+- [ ] Change GitHub Pages source to **GitHub Actions** (manual — in repo Settings → Pages)
+- [ ] Verify site loads at `kstanigar.github.io/st_blog/`
+
+**Code Changes:**
+- `vite.config.ts:19` — Add `base: '/st_blog/'` to `defineConfig()` so Vite generates correct asset paths for GitHub Pages subdirectory
+- `.github/workflows/deploy.yml` — New file, ~30 lines — GitHub Actions workflow that installs pnpm, builds with Vite, uploads `dist/` as Pages artifact, deploys on every push to `main`
+
+**Potential Errors (Researched):**
+- Assets still 404 after deploy → base path not set correctly, confirm `base: '/st_blog/'` matches repo name exactly
+- Build fails in Actions → Node/pnpm version mismatch, using Node 20 + pnpm 11 to match local
+- Pages still shows old deploy → GitHub Actions source not selected in Pages settings
+
+**Decisions:**
+- GitHub Actions over manual `dist` branch deploy — auto-deploys on every push, no manual steps
+- pnpm version pinned to 11 in workflow to match local environment
 
 ---
 
