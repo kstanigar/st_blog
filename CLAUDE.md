@@ -2,7 +2,7 @@
 
 **Purpose:** Fundamental principles for all development work
 **Created:** June 3, 2026
-**Project:** Xenon 3 (NON-X)
+**Project:** Standing Tiger Blog
 
 ---
 
@@ -298,4 +298,4 @@ These rules override any default behavior or assumptions. When in doubt:
 ---
 
 **Last Updated:** June 3, 2026 (expanded with workflow, testing, and communication rules)
-**Applies To:** All Claude Code sessions for Xenon 3 project
+**Applies To:** All Claude Code sessions for Standing Tiger Blog
