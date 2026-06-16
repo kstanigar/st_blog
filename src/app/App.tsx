@@ -13,28 +13,37 @@ import {
 } from "lucide-react";
 
 // ─── Circuit path waypoints ────────────────────────────────────────────────
-const WAYPOINTS: [number, number][] = [
-  [0, 720], [120, 720], [120, 640], [300, 640], [300, 760], [480, 760], [480, 680],
-  [800, 680], [800, 580], [1000, 580], [1000, 720], [1200, 720], [1200, 640],
-  [1520, 640], [1520, 760], [1720, 760], [1720, 620], [1940, 620], [1940, 700],
-  [2140, 700], [2140, 560], [2360, 560], [2360, 680], [2580, 680], [2580, 760],
-  [2780, 760], [2780, 620], [3000, 620], [3000, 700], [3200, 700], [3200, 560],
-  [3440, 560], [3440, 720], [3680, 720], [3680, 640], [3900, 640], [3900, 760],
-  [4120, 760], [4120, 600], [4340, 600], [4340, 720], [4580, 720], [4580, 640],
-  [4820, 640], [4820, 760], [5040, 760], [5040, 620], [5280, 620], [5280, 700],
-  [5520, 700], [5520, 640], [5720, 640], [5720, 760], [5900, 760], [5900, 680],
-  [6000, 680],
-];
+// Number of horizontal-scroll sections — drives circuit width and resistor spacing
+const NUM_SECTIONS = 6;
 
-const CIRCUIT_PATH = WAYPOINTS.reduce((acc, [x, y], i) => {
-  if (i === 0) return `M ${x} ${y}`;
-  const [px, py] = WAYPOINTS[i - 1];
-  if (x !== px) return `${acc} H ${x}`;
-  return `${acc} V ${y}`;
-}, "");
+// Original waypoints were hand-tuned for a 6000px canvas (6 sections × ~1000px).
+// Scaling only the x-axis keeps the vertical zigzag rhythm intact at any width.
+function buildWaypoints(totalWidth: number): [number, number][] {
+  const scale = totalWidth / 6000;
+  const raw: [number, number][] = [
+    [0, 720], [120, 720], [120, 640], [300, 640], [300, 760], [480, 760], [480, 680],
+    [800, 680], [800, 580], [1000, 580], [1000, 720], [1200, 720], [1200, 640],
+    [1520, 640], [1520, 760], [1720, 760], [1720, 620], [1940, 620], [1940, 700],
+    [2140, 700], [2140, 560], [2360, 560], [2360, 680], [2580, 680], [2580, 760],
+    [2780, 760], [2780, 620], [3000, 620], [3000, 700], [3200, 700], [3200, 560],
+    [3440, 560], [3440, 720], [3680, 720], [3680, 640], [3900, 640], [3900, 760],
+    [4120, 760], [4120, 600], [4340, 600], [4340, 720], [4580, 720], [4580, 640],
+    [4820, 640], [4820, 760], [5040, 760], [5040, 620], [5280, 620], [5280, 700],
+    [5520, 700], [5520, 640], [5720, 640], [5720, 760], [5900, 760], [5900, 680],
+    [6000, 680],
+  ];
+  return raw.map(([x, y]) => [Math.round(x * scale), y]);
+}
 
-// Junctions = every intermediate waypoint (direction change corners)
-const JUNCTIONS = WAYPOINTS.slice(1, -1);
+// Builds the SVG path string ("M x y H x V y ...") from a waypoint list
+function buildCircuitPath(waypoints: [number, number][]): string {
+  return waypoints.reduce((acc, [x, y], i) => {
+    if (i === 0) return `M ${x} ${y}`;
+    const [px] = waypoints[i - 1];
+    if (x !== px) return `${acc} H ${x}`;
+    return `${acc} V ${y}`;
+  }, "");
+}
 
 // ─── Matrix rain background ────────────────────────────────────────────────
 function MatrixBackground() {
@@ -45,6 +54,12 @@ function MatrixBackground() {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    // Canvas can't read CSS vars mid-loop — pull --primary once on mount.
+    // Task Group 4 (FloatingPalette) will upgrade this to re-read on skin change.
+    const primary = getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary")
+      .trim() || "#00d4ff";
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -70,8 +85,9 @@ function MatrixBackground() {
         const y = drops[i] * CELL;
         const char = chars[Math.floor(Math.random() * chars.length)];
         const bright = drops[i] < 2;
+        // Bright head chars use full primary; dim trailing chars fade to near-transparent
         ctx.fillStyle = bright
-          ? "#00ffee"
+          ? primary
           : `rgba(0, 212, 255, ${Math.random() * 0.18 + 0.04})`;
         ctx.fillText(char, i * CELL, y);
 
@@ -109,6 +125,22 @@ function CircuitOverlay({
   const pathRef = useRef<SVGPathElement>(null);
   const pathLenRef = useRef(0);
 
+  // Total circuit width must match the actual scroll width (viewport × section count),
+  // not a fixed 6000px — otherwise the circuit runs out before the last section on wide screens.
+  const [totalWidth, setTotalWidth] = useState(() => window.innerWidth * NUM_SECTIONS);
+
+  useEffect(() => {
+    const onResize = () => setTotalWidth(window.innerWidth * NUM_SECTIONS);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const waypoints = buildWaypoints(totalWidth);
+  const circuitPath = buildCircuitPath(waypoints);
+  const junctions = waypoints.slice(1, -1);
+  // Resistors evenly spaced through the circuit at 1/12, 3/12, 5/12, 7/12, 9/12, 11/12
+  const resistorPositions = [1, 3, 5, 7, 9, 11].map((n) => Math.round((n / 12) * totalWidth));
+
   useEffect(() => {
     if (pathRef.current) {
       pathLenRef.current = pathRef.current.getTotalLength();
@@ -116,7 +148,7 @@ function CircuitOverlay({
         trailRef.current.style.strokeDasharray = `0 ${pathLenRef.current}`;
       }
     }
-  }, []);
+  }, [totalWidth]); // re-measure path length whenever circuit width changes
 
   useEffect(() => {
     const el = containerRef.current;
@@ -153,17 +185,17 @@ function CircuitOverlay({
         position: "fixed",
         top: 0,
         left: 0,
-        width: 6000,
+        width: totalWidth,
         height: "100vh",
-        zIndex: 10,
+        zIndex: 11,
         pointerEvents: "none",
         willChange: "transform",
       }}
     >
       <svg
-        width={6000}
+        width={totalWidth}
         height="100%"
-        viewBox="0 0 6000 900"
+        viewBox={`0 0 ${totalWidth} 900`}
         preserveAspectRatio="xMidYMid meet"
       >
         <defs>
@@ -183,67 +215,67 @@ function CircuitOverlay({
           </filter>
         </defs>
 
-        {/* Dim base trace */}
+        {/* Dim base trace — barely visible ghost of the full path */}
         <path
-          d={CIRCUIT_PATH}
+          d={circuitPath}
           fill="none"
-          stroke="rgba(0,212,255,0.07)"
+          stroke="var(--primary-glow-xs)"
           strokeWidth="1.5"
         />
 
-        {/* Glowing lit trail */}
+        {/* Glowing lit trail — fills in as user scrolls */}
         <path
           ref={trailRef}
-          d={CIRCUIT_PATH}
+          d={circuitPath}
           fill="none"
-          stroke="#00d4ff"
+          stroke="var(--primary)"
           strokeWidth="1.5"
           filter="url(#glow)"
         />
 
         {/* Hidden reference path for length/point calculations */}
-        <path ref={pathRef} d={CIRCUIT_PATH} fill="none" stroke="none" />
+        <path ref={pathRef} d={circuitPath} fill="none" stroke="none" />
 
         {/* Junction pads */}
-        {JUNCTIONS.map(([x, y], i) => (
+        {junctions.map(([x, y], i) => (
           <rect
             key={i}
             x={x - 4}
             y={y - 4}
             width={8}
             height={8}
-            fill="#07090e"
-            stroke="rgba(0,212,255,0.25)"
+            fill="var(--background)"
+            stroke="var(--primary-glow-sm)"
             strokeWidth="1.5"
           />
         ))}
 
-        {/* Component symbols — resistors every ~1000 units */}
-        {[500, 1350, 2250, 3100, 3970, 4900].map((cx) => (
+        {/* Component symbols — resistors evenly spaced across the full circuit width */}
+        {resistorPositions.map((cx) => (
           <g key={cx} transform={`translate(${cx}, 700)`}>
-            <line x1="-18" y1="0" x2="-10" y2="0" stroke="rgba(0,212,255,0.2)" strokeWidth="1.5" />
-            <rect x="-10" y="-5" width="20" height="10" fill="#07090e" stroke="rgba(0,212,255,0.2)" strokeWidth="1.5" />
-            <line x1="10" y1="0" x2="18" y2="0" stroke="rgba(0,212,255,0.2)" strokeWidth="1.5" />
+            <line x1="-18" y1="0" x2="-10" y2="0" stroke="var(--primary-glow-sm)" strokeWidth="1.5" />
+            <rect x="-10" y="-5" width="20" height="10" fill="var(--background)" stroke="var(--primary-glow-sm)" strokeWidth="1.5" />
+            <line x1="10" y1="0" x2="18" y2="0" stroke="var(--primary-glow-sm)" strokeWidth="1.5" />
           </g>
         ))}
 
         {/* Signal dot glow halo */}
         <circle
           ref={dotGlowRef}
-          cx={WAYPOINTS[0][0]}
-          cy={WAYPOINTS[0][1]}
+          cx={waypoints[0][0]}
+          cy={waypoints[0][1]}
           r={12}
-          fill="rgba(0,212,255,0.12)"
+          fill="var(--primary-glow-sm)"
           filter="url(#dot-glow)"
         />
 
         {/* Signal dot */}
         <circle
           ref={dotRef}
-          cx={WAYPOINTS[0][0]}
-          cy={WAYPOINTS[0][1]}
+          cx={waypoints[0][0]}
+          cy={waypoints[0][1]}
           r={4}
-          fill="#00d4ff"
+          fill="var(--primary)"
           filter="url(#glow)"
         />
       </svg>
@@ -284,7 +316,7 @@ function GridOverlay({ opacity = 0.03 }: { opacity?: number }) {
       style={{
         opacity,
         backgroundImage:
-          "linear-gradient(rgba(0,212,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.6) 1px, transparent 1px)",
+          "linear-gradient(var(--primary-glow-md) 1px, transparent 1px), linear-gradient(90deg, var(--primary-glow-md) 1px, transparent 1px)",
         backgroundSize: "64px 64px",
       }}
     />
@@ -293,17 +325,17 @@ function GridOverlay({ opacity = 0.03 }: { opacity?: number }) {
 
 // ─── HOME ──────────────────────────────────────────────────────────────────
 function HomeSection({ onNavigate }: { onNavigate: (i: number) => void }) {
-  const navItems = ["GAMES", "MUSIC", "TOOLS", "BLOG", "SHOP"];
+  const navItems = ["BLOG", "GAMES", "ANALYTICS", "MUSIC", "SHOP"];
 
   return (
     <Section className="bg-background flex flex-col justify-center pl-16 lg:pl-24">
       <GridOverlay opacity={0.04} />
-      <div className="absolute inset-0 bg-background/80" />
+      <div className="absolute inset-0 bg-background/80" style={{ zIndex: 10 }} />
 
       <div className="relative z-20">
         {/* Signal label */}
         <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.4em] text-primary mb-10">
-          <Zap size={9} style={{ filter: "drop-shadow(0 0 4px #00d4ff)" }} />
+          <Zap size={9} style={{ filter: "drop-shadow(0 0 4px var(--primary))" }} />
           DEVNODE://SIGNAL/INIT
         </div>
 
@@ -318,8 +350,8 @@ function HomeSection({ onNavigate }: { onNavigate: (i: number) => void }) {
           className="font-display font-black uppercase leading-none tracking-tight mb-6"
           style={{
             fontSize: "clamp(4rem, 12vw, 9rem)",
-            color: "#00d4ff",
-            textShadow: "0 0 60px rgba(0,212,255,0.4), 0 0 120px rgba(0,212,255,0.15)",
+            color: "var(--primary)",
+            textShadow: "0 0 60px var(--primary-glow-md), 0 0 120px var(--primary-glow-xs)",
           }}
         >
           NODE
@@ -329,8 +361,8 @@ function HomeSection({ onNavigate }: { onNavigate: (i: number) => void }) {
         <div
           className="w-20 h-px mb-6"
           style={{
-            background: "#00d4ff",
-            boxShadow: "0 0 8px rgba(0,212,255,0.8)",
+            background: "var(--primary)",
+            boxShadow: "0 0 8px var(--primary-glow-lg)",
           }}
         />
 
@@ -413,7 +445,7 @@ function GamesSection() {
               <div className="mt-3 h-px bg-border">
                 <div
                   className="h-full bg-primary transition-all duration-500 group-hover:w-full"
-                  style={{ width: "0%", boxShadow: "0 0 4px rgba(0,212,255,0.6)" }}
+                  style={{ width: "0%", boxShadow: "0 0 4px var(--primary-glow-md)" }}
                 />
               </div>
             </div>
@@ -423,7 +455,7 @@ function GamesSection() {
 
       <div className="absolute top-1/2 right-8 -translate-y-1/2 font-mono text-[9px] text-muted-foreground/40 tracking-widest"
         style={{ writingMode: "vertical-rl" }}>
-        02 / 06
+        03 / 06
       </div>
     </Section>
   );
@@ -441,7 +473,7 @@ function MusicSection() {
 
   return (
     <Section className="bg-background flex flex-col justify-center pl-16 lg:pl-24">
-      <div className="absolute inset-0 bg-background/96" />
+      <div className="absolute inset-0 bg-background/60" style={{ zIndex: 10 }} />
       <GridOverlay />
 
       <div className="relative z-20">
@@ -460,7 +492,7 @@ function MusicSection() {
           {tools.map((t, i) => (
             <div
               key={t.name}
-              className="flex items-center gap-5 py-4 border-b border-border hover:border-primary/30 hover:bg-primary/5 cursor-pointer group transition-all px-1"
+              className="flex items-center gap-5 py-4 border-b border-border bg-background/60 backdrop-blur-sm hover:border-primary/30 hover:bg-primary/5 cursor-pointer group transition-all px-1"
             >
               <div className="font-mono text-[9px] text-muted-foreground/60 w-6 shrink-0 tabular-nums">
                 {String(i + 1).padStart(2, "0")}
@@ -489,7 +521,7 @@ function MusicSection() {
 
       <div className="absolute top-1/2 right-8 -translate-y-1/2 font-mono text-[9px] text-muted-foreground/40 tracking-widest"
         style={{ writingMode: "vertical-rl" }}>
-        03 / 06
+        05 / 06
       </div>
     </Section>
   );
@@ -508,19 +540,19 @@ function ToolsSection() {
 
   return (
     <Section className="bg-background flex flex-col justify-center pl-16 lg:pl-24">
-      <div className="absolute inset-0 bg-background/96" />
+      <div className="absolute inset-0 bg-background/96" style={{ zIndex: 10 }} />
       <GridOverlay />
 
       <div className="relative z-20">
         <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.4em] text-primary mb-8">
           <Wrench size={9} />
-          NODE://TOOLS
+          NODE://ANALYTICS
         </div>
         <h2
           className="font-display font-black uppercase tracking-tight text-foreground mb-12"
           style={{ fontSize: "clamp(2.5rem, 7vw, 5.5rem)" }}
         >
-          TOOLS
+          ANALYTICS
         </h2>
 
         <div
@@ -541,7 +573,7 @@ function ToolsSection() {
                 </div>
                 <div
                   className="font-mono text-sm font-bold tabular-nums"
-                  style={{ color: "#00d4ff", textShadow: "0 0 8px rgba(0,212,255,0.5)" }}
+                  style={{ color: "var(--primary)", textShadow: "0 0 8px var(--primary-glow-sm)" }}
                 >
                   {t.score}
                 </div>
@@ -551,8 +583,8 @@ function ToolsSection() {
                   className="h-full transition-all duration-700 group-hover:opacity-100"
                   style={{
                     width: `${(t.score / 10) * 100}%`,
-                    background: "#00d4ff",
-                    boxShadow: "0 0 6px rgba(0,212,255,0.7)",
+                    background: "var(--primary)",
+                    boxShadow: "0 0 6px var(--primary-glow-md)",
                     opacity: 0.6,
                   }}
                 />
@@ -583,7 +615,7 @@ function BlogSection() {
 
   return (
     <Section className="bg-background flex flex-col justify-center pl-16 lg:pl-24">
-      <div className="absolute inset-0 bg-background/96" />
+      <div className="absolute inset-0 bg-background/20" style={{ zIndex: 10 }} />
       <GridOverlay />
 
       <div className="relative z-20">
@@ -602,7 +634,7 @@ function BlogSection() {
           {posts.map((p, i) => (
             <div
               key={p.title}
-              className="flex gap-5 items-start py-5 border-b border-border hover:border-primary/30 cursor-pointer group transition-colors"
+              className="flex gap-5 items-start py-5 border-b border-border bg-background/20 backdrop-blur-xl hover:border-primary/30 cursor-pointer group transition-colors"
             >
               <div className="font-mono text-[9px] text-muted-foreground/50 pt-px w-20 shrink-0 tabular-nums">
                 {p.date}
@@ -629,7 +661,7 @@ function BlogSection() {
 
       <div className="absolute top-1/2 right-8 -translate-y-1/2 font-mono text-[9px] text-muted-foreground/40 tracking-widest"
         style={{ writingMode: "vertical-rl" }}>
-        05 / 06
+        02 / 06
       </div>
     </Section>
   );
@@ -666,7 +698,7 @@ function ShopSection() {
 
   return (
     <Section className="bg-background flex flex-col justify-center pl-16 lg:pl-24">
-      <div className="absolute inset-0 bg-background/96" />
+      <div className="absolute inset-0 bg-background/96" style={{ zIndex: 10 }} />
       <GridOverlay />
 
       <div className="relative z-20">
@@ -704,7 +736,7 @@ function ShopSection() {
               <div className="flex items-center justify-between mt-auto">
                 <div
                   className="font-display text-lg font-black"
-                  style={{ color: "#00d4ff" }}
+                  style={{ color: "var(--primary)" }}
                 >
                   {p.price}
                 </div>
@@ -728,8 +760,8 @@ function ShopSection() {
 }
 
 // ─── Root App ──────────────────────────────────────────────────────────────
-const PAGES = ["HOME", "GAMES", "MUSIC", "TOOLS", "BLOG", "SHOP"];
-const PAGE_ICONS = [Cpu, Gamepad2, Music2, Wrench, BookOpen, ShoppingBag];
+const PAGES = ["HOME", "BLOG", "GAMES", "ANALYTICS", "MUSIC", "SHOP"];
+const PAGE_ICONS = [Cpu, BookOpen, Gamepad2, Wrench, Music2, ShoppingBag];
 
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -764,17 +796,17 @@ export default function App() {
       <nav
         className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4"
         style={{
-          borderBottom: "1px solid rgba(0,212,255,0.08)",
-          background: "rgba(7,9,14,0.85)",
+          borderBottom: "1px solid var(--primary-glow-border)",
+          background: "var(--bg-nav)",
           backdropFilter: "blur(12px)",
         }}
       >
         <button
           onClick={() => navigateTo(0)}
           className="flex items-center gap-2 font-display text-[10px] tracking-[0.35em] font-bold"
-          style={{ color: "#00d4ff", textShadow: "0 0 12px rgba(0,212,255,0.6)" }}
+          style={{ color: "var(--primary)", textShadow: "0 0 12px var(--primary-glow-md)" }}
         >
-          <Zap size={11} style={{ filter: "drop-shadow(0 0 4px #00d4ff)" }} />
+          <Zap size={11} style={{ filter: "drop-shadow(0 0 4px var(--primary))" }} />
           DEVNODE
         </button>
 
@@ -786,10 +818,10 @@ export default function App() {
                 key={page}
                 onClick={() => navigateTo(i)}
                 className="flex items-center gap-1.5 font-mono text-[9px] tracking-widest transition-colors"
-                style={{ color: active === i ? "#00d4ff" : "#3d5a72" }}
+                style={{ color: active === i ? "var(--primary)" : "var(--muted-foreground)" }}
               >
                 {active === i && (
-                  <span style={{ color: "#00d4ff", fontSize: 8 }}>▸</span>
+                  <span style={{ color: "var(--primary)", fontSize: 8 }}>▸</span>
                 )}
                 {page}
               </button>
@@ -797,8 +829,8 @@ export default function App() {
           })}
         </div>
 
-        <div className="font-mono text-[9px] tabular-nums" style={{ color: "#3d5a72" }}>
-          <span style={{ color: "#00d4ff" }}>{String(active + 1).padStart(2, "0")}</span>
+        <div className="font-mono text-[9px] tabular-nums" style={{ color: "var(--muted-foreground)" }}>
+          <span style={{ color: "var(--primary)" }}>{String(active + 1).padStart(2, "0")}</span>
           {" / 06"}
         </div>
       </nav>
@@ -814,10 +846,10 @@ export default function App() {
         }}
       >
         <HomeSection onNavigate={navigateTo} />
-        <GamesSection />
-        <MusicSection />
-        <ToolsSection />
         <BlogSection />
+        <GamesSection />
+        <ToolsSection />
+        <MusicSection />
         <ShopSection />
       </div>
 
