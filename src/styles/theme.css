@@ -39,6 +39,19 @@
   --sidebar-accent-foreground: #b8cfe0;
   --sidebar-border: rgba(0, 212, 255, 0.1);
   --sidebar-ring: rgba(0, 212, 255, 0.4);
+
+  /* ── Glow alpha variants ─────────────────────────────────────────────────
+     Derived from --primary using color-mix so they update automatically
+     when --primary changes (e.g. the color skin system or a future slider).
+     Never hardcode rgba(0,212,255,X) in components — reference these instead. */
+  --primary-glow-xs:     color-mix(in srgb, var(--primary)  7%, transparent); /* dim base trace, barely-there tints */
+  --primary-glow-sm:     color-mix(in srgb, var(--primary) 20%, transparent); /* junction pads, dot halo, resistor strokes */
+  --primary-glow-md:     color-mix(in srgb, var(--primary) 45%, transparent); /* text shadows, progress bars, grid lines */
+  --primary-glow-lg:     color-mix(in srgb, var(--primary) 80%, transparent); /* hairline glow, bright halos */
+  --primary-glow-border: color-mix(in srgb, var(--primary)  8%, transparent); /* nav bottom border — just a hint of color */
+
+  /* Nav backdrop — background at 85% opacity for the frosted glass effect */
+  --bg-nav: color-mix(in srgb, var(--background) 85%, transparent);
 }
 
 .dark {
