@@ -336,7 +336,7 @@ function HomeSection({ onNavigate }: { onNavigate: (i: number) => void }) {
         {/* Signal label */}
         <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.4em] text-primary mb-10">
           <Zap size={9} style={{ filter: "drop-shadow(0 0 4px var(--primary))" }} />
-          DEVNODE://SIGNAL/INIT
+          STANDING TIGER://SIGNAL/INIT
         </div>
 
         {/* Logotype */}
@@ -747,7 +747,7 @@ function ShopSection() {
         </div>
 
         <div className="mt-14 font-mono text-[9px] text-muted-foreground/25 tracking-[0.3em]">
-          END OF SIGNAL — DEVNODE://2026
+          END OF SIGNAL — STANDING TIGER://2026
         </div>
       </div>
 
@@ -807,7 +807,7 @@ export default function App() {
           style={{ color: "var(--primary)", textShadow: "0 0 12px var(--primary-glow-md)" }}
         >
           <Zap size={11} style={{ filter: "drop-shadow(0 0 4px var(--primary))" }} />
-          DEVNODE
+          STANDING TIGER
         </button>
 
         <div className="flex items-center gap-7">
