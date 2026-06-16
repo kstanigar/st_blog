@@ -3,6 +3,21 @@
 
 ---
 
+## 2026-06-15 — Session 2: GitHub Pages Deployment
+
+**Completed:**
+- Fixed 404 — Vite project requires build before deploy
+- Added `base: '/st_blog/'` to `vite.config.ts`
+- Created `.github/workflows/deploy.yml` (Node 22 + pnpm 11 + Vite build)
+- Removed GitHub's auto-generated `static.yml` (was deploying raw source)
+- Site live at `kstanigar.github.io/st_blog/` ✅
+
+**Next:**
+- Reorder horizontal scroll pages and update navigation
+- Redesign circuit line SVG animation that follows scroll progress
+
+---
+
 ## 2026-06-15 — Session 1: Project Setup
 
 **Completed:**

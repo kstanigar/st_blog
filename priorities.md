@@ -5,8 +5,29 @@
 
 ## Current Priorities
 
+### 2026-06-15 — Page Reorder, Navigation & Circuit Line Redesign
+**Status:** 🔲 Up Next (Session 3)
+
+**Scope:**
+- Reorder the 6 horizontal scroll pages (HOME, GAMES, MUSIC, TOOLS, BLOG, SHOP)
+- Update navigation to match new page order
+- Redesign/modify the SVG circuit animation line that follows scroll progress
+
+**Tasks:**
+- [ ] Review current page order and define new order with user
+- [ ] Reorder page components in `App.tsx`
+- [ ] Update nav links to reflect new order
+- [ ] Inspect circuit line SVG animation in `App.tsx`
+- [ ] Plan circuit line design changes with user
+- [ ] Implement circuit line changes
+
+**Files Likely Affected:**
+- `src/app/App.tsx` — page order, nav links, circuit SVG animation
+
+---
+
 ### 2026-06-15 — GitHub Pages Deployment Fix
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 **Problem:** Site at `kstanigar.github.io/st_blog/` returns 404 on `main.tsx` — Vite project needs to be built before deploying; raw source files cannot be served directly.
 
@@ -17,7 +38,7 @@
 - [ ] Run `pnpm run build` locally to verify no build errors
 - [ ] Commit and push
 - [ ] Change GitHub Pages source to **GitHub Actions** (manual — in repo Settings → Pages)
-- [ ] Verify site loads at `kstanigar.github.io/st_blog/`
+- [x] Verify site loads at `kstanigar.github.io/st_blog/`
 
 **Code Changes:**
 - `vite.config.ts:19` — Add `base: '/st_blog/'` to `defineConfig()` so Vite generates correct asset paths for GitHub Pages subdirectory
