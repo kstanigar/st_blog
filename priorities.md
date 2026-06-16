@@ -54,124 +54,270 @@
 
 ---
 
-### 2026-06-16 — Phase 2: Page Modularity
-**Status:** 🔲 Planned — pending background/circuit discussion before implementation
-**Plan file:** See below
+### 2026-06-16 — Phase 2: Page Modularity + Template System
+**Status:** 🔲 Planned — approved, ready to implement
+**Confirmed approach:** Templates as full layout skeletons with content slot
 
-**Goal:** Adding a new page requires editing exactly one place — one entry in `PAGE_CONFIG`. Nav, scroll container, page counter, circuit width, bg overlay, and section counter all derive from it automatically.
-
-**Current pain points (5 places to touch per new page):**
-- `PAGES[]` array — line 763
-- `PAGE_ICONS[]` array — line 764 (parallel array, easy to desync)
-- `NUM_SECTIONS = 6` — line 17 (hardcoded)
-- `" / 06"` counter — line 834 (hardcoded total)
-- Scroll container JSX — lines 848–853 (explicit section list)
-- Each section's overlay div and counter are hardcoded inside the component
+**Goal:** Adding a new page = one entry in `PAGE_CONFIG` + a content component. Every template is pre-tested — overlay, circuit visibility, header, title, content container all come for free.
 
 ---
 
-**New `PAGE_CONFIG` structure (replaces lines 763–764, moves to top of file):**
+**Architecture overview:**
+
+```
+PAGE_CONFIG entry
+  └── template: 0–5 (or null for HOME)
+        └── Template component (e.g. BlogTemplate)
+              ├── Overlay div (transparency + blur)
+              ├── GridOverlay
+              ├── PageHeader (NODE://LABEL + icon)
+              ├── PageTitle (h2)
+              └── Content slot → <page.component /> (rows / cards / cells)
+
+SectionShell (scroll snap + counter — same for every page)
+  └── wraps Template + content
+```
+
+---
+
+**6 Page Templates:**
+
+| # | Name | Overlay | Circuit | Content Container | Best for |
+|---|---|---|---|---|---|
+| 0 | BLOG | `bg/20 backdrop-blur-xl` | visible | `border-t` list, rows | Articles, lists |
+| 1 | GAMES | none (transparent) | fully visible | 2-col card grid | Cards, showcase |
+| 2 | ANALYTICS | `bg/96` | hidden | 2-col border grid | Data, dense UI |
+| 3 | MUSIC | `bg/60 backdrop-blur-sm` | partial | `border-t` list, dense rows | Tools, link lists |
+| 4 | SHOP | `bg/96` | hidden | flex card row | Products, commerce |
+| 5 | BLANK | none | fully visible | none — full freedom | Custom layouts |
+
+HOME = `template: null` — renders its own full component, not slotted.
+
+---
+
+**New file structure:**
+
+```
+src/app/
+├── templates/
+│   ├── index.ts              — PAGE_TEMPLATES lookup + TemplateProps type export
+│   ├── BlogTemplate.tsx      — Template 0
+│   ├── GamesTemplate.tsx     — Template 1
+│   ├── AnalyticsTemplate.tsx — Template 2
+│   ├── MusicTemplate.tsx     — Template 3
+│   ├── ShopTemplate.tsx      — Template 4
+│   └── BlankTemplate.tsx     — Template 5
+└── App.tsx                   — updated (section components stripped to content only)
+```
+
+---
+
+**`TemplateProps` type (in `src/app/templates/index.ts`):**
 ```ts
-// Single source of truth — add one entry here to add a page everywhere.
+export type TemplateProps = {
+  label: string;                                        // page label e.g. "BLOG"
+  icon: React.ComponentType<{ size?: number }>;         // Lucide icon
+  onNavigate?: (i: number) => void;                    // passed through for any nav links in content
+  children: React.ReactNode;                           // content slot — rows, cards, cells
+};
+
+// Lookup used by App.tsx scroll container
+export const PAGE_TEMPLATES: Record<number, React.ComponentType<TemplateProps>> = {
+  0: BlogTemplate,
+  1: GamesTemplate,
+  2: AnalyticsTemplate,
+  3: MusicTemplate,
+  4: ShopTemplate,
+  5: BlankTemplate,
+};
+```
+
+---
+
+**Example template — BlogTemplate.tsx (Template 0):**
+```tsx
+// Template 0: BLOG
+// Overlay: bg-background/20 + backdrop-blur-xl — circuit visible, airy feel
+// Content container: border-t list, each child is a row
+import { GridOverlay } from "../App";
+import type { TemplateProps } from "./index";
+
+export function BlogTemplate({ label, icon: Icon, children }: TemplateProps) {
+  return (
+    <div className="bg-background flex flex-col justify-center pl-16 lg:pl-24 h-full w-full">
+      {/* Overlay at z=10 — circuit at z=11 paints above, content at z=20 paints above circuit */}
+      <div className="absolute inset-0 bg-background/20 backdrop-blur-xl" style={{ zIndex: 10 }} />
+      <GridOverlay />
+      <div className="relative z-20">
+        <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.4em] text-primary mb-8">
+          <Icon size={9} />
+          NODE://{label}
+        </div>
+        <h2 className="font-display font-black uppercase tracking-tight text-foreground mb-12"
+          style={{ fontSize: "clamp(2.5rem, 7vw, 5.5rem)" }}>
+          {label}
+        </h2>
+        {/* Content slot — border-t list container */}
+        <div className="max-w-xl border-t border-border">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+**Updated `PAGE_CONFIG` (replaces lines 763–764, moves near top of App.tsx):**
+```ts
+// Single source of truth. Add one entry here to register a new page everywhere:
+// nav, scroll container, page counter, circuit width, and section counter all update automatically.
+// template: pick 0–5 from PAGE_TEMPLATES. null = unique layout (HOME only).
 type PageConfig = {
   id: string;
   label: string;
   icon: React.ComponentType<{ size?: number }>;
   component: React.ComponentType<{ onNavigate?: (i: number) => void }>;
-  overlay: string | null;   // Tailwind classes for bg overlay at z=10; null = fully transparent
-  className: string;        // Layout classes passed to the Section wrapper
+  template: number | null;
 };
 
 const PAGE_CONFIG: PageConfig[] = [
-  { id: "home",      label: "HOME",      icon: Cpu,         component: HomeSection,  overlay: "bg-background/80",                  className: "bg-background flex flex-col justify-center pl-16 lg:pl-24" },
-  { id: "blog",      label: "BLOG",      icon: BookOpen,    component: BlogSection,  overlay: "bg-background/20 backdrop-blur-xl", className: "bg-background flex flex-col justify-center pl-16 lg:pl-24" },
-  { id: "games",     label: "GAMES",     icon: Gamepad2,    component: GamesSection, overlay: null,                                className: "flex flex-col justify-center pl-16 lg:pl-24" },
-  { id: "analytics", label: "ANALYTICS", icon: Wrench,      component: ToolsSection, overlay: "bg-background/96",                  className: "bg-background flex flex-col justify-center pl-16 lg:pl-24" },
-  { id: "music",     label: "MUSIC",     icon: Music2,      component: MusicSection, overlay: "bg-background/60 backdrop-blur-sm", className: "bg-background flex flex-col justify-center pl-16 lg:pl-24" },
-  { id: "shop",      label: "SHOP",      icon: ShoppingBag, component: ShopSection,  overlay: "bg-background/96",                  className: "bg-background flex flex-col justify-center pl-16 lg:pl-24" },
+  { id: "home",      label: "HOME",      icon: Cpu,         component: HomeSection,  template: null },
+  { id: "blog",      label: "BLOG",      icon: BookOpen,    component: BlogSection,  template: 0 },
+  { id: "games",     label: "GAMES",     icon: Gamepad2,    component: GamesSection, template: 1 },
+  { id: "analytics", label: "ANALYTICS", icon: Wrench,      component: ToolsSection, template: 2 },
+  { id: "music",     label: "MUSIC",     icon: Music2,      component: MusicSection, template: 3 },
+  { id: "shop",      label: "SHOP",      icon: ShoppingBag, component: ShopSection,  template: 4 },
 ];
 ```
 
 ---
 
-**Exact line-by-line changes:**
+**Exact line-by-line changes to App.tsx:**
 
-**1. Line 17** — `NUM_SECTIONS` becomes derived (not hardcoded):
+**1. Lines 763–764** — remove `PAGES[]` + `PAGE_ICONS[]`, replace with `PAGE_CONFIG` array (moved to top of file, after imports).
+
+**2. Line 17** — derive `NUM_SECTIONS` from config:
 ```ts
-// Before:
-const NUM_SECTIONS = 6;
-// After:
-const NUM_SECTIONS = PAGE_CONFIG.length; // auto-updates when pages added/removed
+// Before: const NUM_SECTIONS = 6;
+// After:  const NUM_SECTIONS = PAGE_CONFIG.length;
+// Safe — section functions are hoisted (function declarations), PAGE_CONFIG can reference them from top of file
 ```
-Requires `PAGE_CONFIG` to be defined above `CircuitOverlay`. Safe — section functions are hoisted (`function` declarations).
 
-**2. Line 22** — `buildWaypoints` scale factor:
+**3. Line 22** — `buildWaypoints` scale uses derived constant:
 ```ts
-// Before:
-const scale = totalWidth / 6000;
-// After:
-const scale = totalWidth / (NUM_SECTIONS * 1000); // 1000px per section
+// Before: const scale = totalWidth / 6000;
+// After:  const scale = totalWidth / (NUM_SECTIONS * 1000);
 ```
 
-**3. Lines 287–309** — `Section` component gains `overlay`, `index`, `total` props; renders overlay div and counter internally:
+**4. Lines 287–309** — rename `Section` → `SectionShell`, remove `transparent`/`className` props, add `index`/`total`, render counter internally:
 ```tsx
-// Before props: { children, transparent?, className? }
-// After props:  { children, overlay, index, total, className? }
-// Renders overlay div at z=10 if overlay is non-null
-// Renders section counter (e.g. "02 / 07") using index + total — auto-updates
-// Removes: transparent prop (overlay: null = transparent)
+// Handles scroll snap, overflow, and the side counter — nothing else.
+// All layout (padding, overlay, header) lives inside the template.
+function SectionShell({ children, index, total }: { children: React.ReactNode; index: number; total: number }) {
+  return (
+    <div className="relative flex-shrink-0 overflow-hidden"
+      style={{ width: "100vw", height: "100vh", scrollSnapAlign: "start" }}>
+      {children}
+      <div className="absolute top-1/2 right-8 -translate-y-1/2 font-mono text-[9px] text-muted-foreground/40 tracking-widest"
+        style={{ writingMode: "vertical-rl" }}>
+        {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+      </div>
+    </div>
+  );
+}
 ```
 
-**4. Lines 331–405 (HomeSection)** — remove `<Section>` wrapper; remove overlay div (line 333); remove hardcoded counter (lines 400–403). Returns inner content only — Section wrapper rendered by scroll container.
+**5. Lines 327–405 (HomeSection)** — remove outer `<Section>` wrapper + counter div (lines 400–403). HOME renders its own layout inside `SectionShell`. Overlay div (line 333) stays — HOME manages its own.
 
-**5. Lines 417–461 (GamesSection)** — same: remove `<Section>` wrapper; remove hardcoded counter (lines 456–459).
+**6. Lines 408–461 (GamesSection)** — strip to content only:
+- Remove `<Section>` wrapper
+- Remove counter div (lines 456–459)
+- Remove `NODE://GAMES` header div (lines 420–423) — template provides this
+- Remove `<h2>GAMES</h2>` (lines 424–429) — template provides this
+- Keep: card grid JSX only
 
-**6. Lines 474–527 (MusicSection)** — same: remove `<Section>` wrapper; remove overlay div (line 476); remove counter (lines 522–525).
+**7. Lines 464–527 (MusicSection)** — strip to content only:
+- Remove `<Section>` wrapper
+- Remove overlay div (line 476)
+- Remove counter div (lines 522–525)
+- Remove `NODE://MUSIC` header + h2 — template provides
+- Keep: list rows JSX only
 
-**7. Lines 541–603 (ToolsSection)** — same: remove `<Section>` wrapper; remove overlay div (line 543); remove counter (lines 598–601).
+**8. Lines 530–603 (ToolsSection)** — strip to content only:
+- Remove `<Section>` wrapper
+- Remove overlay div (line 543)
+- Remove counter div (lines 598–601)
+- Remove `NODE://ANALYTICS` header + h2 — template provides
+- Keep: grid cells JSX only
 
-**8. Lines 616–667 (BlogSection)** — same: remove `<Section>` wrapper; remove overlay div (line 618); remove counter (lines 662–665).
+**9. Lines 606–667 (BlogSection)** — strip to content only:
+- Remove `<Section>` wrapper
+- Remove overlay div (line 618)
+- Remove counter div (lines 662–665)
+- Remove `NODE://BLOG` header + h2 — template provides
+- Remove `<div className="max-w-xl border-t border-border">` container — template provides
+- Keep: post row JSX only
 
-**9. Lines 699–759 (ShopSection)** — same: remove `<Section>` wrapper; remove overlay div (line 701); remove counter (lines 754–757).
+**10. Lines 670–759 (ShopSection)** — strip to content only:
+- Remove `<Section>` wrapper
+- Remove overlay div (line 701)
+- Remove counter div (lines 754–757)
+- Remove `NODE://SHOP` header + h2 — template provides
+- Keep: product card JSX only
 
-**10. Lines 763–764** — replace `PAGES[]` + `PAGE_ICONS[]` with `PAGE_CONFIG` (already moved to top of file).
-
-**11. Lines 814–829** — nav map updates:
+**11. Lines 814–829 (nav map)** — update to `PAGE_CONFIG`:
 ```tsx
-// Before:
-{PAGES.map((page, i) => { const Icon = PAGE_ICONS[i]; ... {page} ... })}
-// After:
-{PAGE_CONFIG.map((page, i) => { ... {page.label} ... })}
+// Before: {PAGES.map((page, i) => { const Icon = PAGE_ICONS[i]; ... {page} })}
+// After:  {PAGE_CONFIG.map((page, i) => { ... {page.label} })}
 ```
 
-**12. Line 834** — dynamic total:
+**12. Line 834 (counter total)** — dynamic:
 ```tsx
-// Before:  {" / 06"}
-// After:   {` / ${String(PAGE_CONFIG.length).padStart(2, "0")}`}
+// Before: {" / 06"}
+// After:  {` / ${String(PAGE_CONFIG.length).padStart(2, "0")}`}
 ```
 
-**13. Lines 848–853** — scroll container renders from config:
+**13. Lines 848–853 (scroll container)** — render from config:
 ```tsx
-// Before:
-<HomeSection onNavigate={navigateTo} />
-<BlogSection />
-...
-
-// After:
-{PAGE_CONFIG.map((page, i) => (
-  <Section key={page.id} overlay={page.overlay} index={i} total={PAGE_CONFIG.length} className={page.className}>
-    <page.component onNavigate={navigateTo} />
-  </Section>
-))}
+{PAGE_CONFIG.map((page, i) => {
+  const Template = page.template !== null ? PAGE_TEMPLATES[page.template] : null;
+  return (
+    <SectionShell key={page.id} index={i} total={PAGE_CONFIG.length}>
+      {Template
+        ? <Template label={page.label} icon={page.icon} onNavigate={navigateTo}>
+            <page.component onNavigate={navigateTo} />
+          </Template>
+        : <page.component onNavigate={navigateTo} />  // HOME: renders its own full layout
+      }
+    </SectionShell>
+  );
+})}
 ```
 
 ---
 
-**Files affected:** `src/app/App.tsx` only — ~13 targeted edits, no new files
+**New files to create (7 files):**
+- `src/app/templates/index.ts` — `TemplateProps` type + `PAGE_TEMPLATES` lookup
+- `src/app/templates/BlogTemplate.tsx` — Template 0
+- `src/app/templates/GamesTemplate.tsx` — Template 1
+- `src/app/templates/AnalyticsTemplate.tsx` — Template 2
+- `src/app/templates/MusicTemplate.tsx` — Template 3
+- `src/app/templates/ShopTemplate.tsx` — Template 4
+- `src/app/templates/BlankTemplate.tsx` — Template 5
 
-**Result:** Adding a new page = one new object in `PAGE_CONFIG`. Zero other changes needed.
+**App.tsx changes:** 13 targeted edits — no logic changes, pure restructuring
 
-**Pending discussion before implementation:** How should the circuit and MatrixBackground handle new pages? (Discussed separately — see session notes.)
+---
+
+**Adding a new page after this refactor:**
+```ts
+// 1. Create src/app/sections/VideosSection.tsx — content rows only (~30 lines)
+// 2. Add one line to PAGE_CONFIG:
+{ id: "videos", label: "VIDEOS", icon: Play, component: VideosSection, template: 0 }
+// Done. Nav, counter, circuit, overlay, header, title — all automatic.
+```
 
 ---
 

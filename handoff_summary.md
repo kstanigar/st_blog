@@ -18,7 +18,14 @@
 - AWS Amplify for frontend deployment (CI/CD, SPA routing, auto SSL)
 - Single database platform — no second service needed
 
-**Next:**
+**Phase 2 — Page Modularity + Template System (planned, ready to implement):**
+- 6 page templates (0=Blog, 1=Games, 2=Analytics, 3=Music, 4=Shop, 5=Blank) — pre-tested layout skeletons
+- Templates provide: overlay, GridOverlay, header, h2 title, content container — section components provide content rows/cards only
+- Adding a new page = one `PAGE_CONFIG` entry + a content component
+- 7 new files in `src/app/templates/`, 13 targeted edits to App.tsx
+- Full plan with exact line numbers in `priorities.md`
+
+**Next (auth):**
 - Session 4A: Supabase project setup + database migration + auth modal in React
 - Session 4B: Stripe products + Checkout session + webhook Edge Function
 - Session 4C: FloatingPalette wired to real purchases + AWS deploy
