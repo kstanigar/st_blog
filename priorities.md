@@ -54,6 +54,127 @@
 
 ---
 
+### 2026-06-16 — Phase 2: Page Modularity
+**Status:** 🔲 Planned — pending background/circuit discussion before implementation
+**Plan file:** See below
+
+**Goal:** Adding a new page requires editing exactly one place — one entry in `PAGE_CONFIG`. Nav, scroll container, page counter, circuit width, bg overlay, and section counter all derive from it automatically.
+
+**Current pain points (5 places to touch per new page):**
+- `PAGES[]` array — line 763
+- `PAGE_ICONS[]` array — line 764 (parallel array, easy to desync)
+- `NUM_SECTIONS = 6` — line 17 (hardcoded)
+- `" / 06"` counter — line 834 (hardcoded total)
+- Scroll container JSX — lines 848–853 (explicit section list)
+- Each section's overlay div and counter are hardcoded inside the component
+
+---
+
+**New `PAGE_CONFIG` structure (replaces lines 763–764, moves to top of file):**
+```ts
+// Single source of truth — add one entry here to add a page everywhere.
+type PageConfig = {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number }>;
+  component: React.ComponentType<{ onNavigate?: (i: number) => void }>;
+  overlay: string | null;   // Tailwind classes for bg overlay at z=10; null = fully transparent
+  className: string;        // Layout classes passed to the Section wrapper
+};
+
+const PAGE_CONFIG: PageConfig[] = [
+  { id: "home",      label: "HOME",      icon: Cpu,         component: HomeSection,  overlay: "bg-background/80",                  className: "bg-background flex flex-col justify-center pl-16 lg:pl-24" },
+  { id: "blog",      label: "BLOG",      icon: BookOpen,    component: BlogSection,  overlay: "bg-background/20 backdrop-blur-xl", className: "bg-background flex flex-col justify-center pl-16 lg:pl-24" },
+  { id: "games",     label: "GAMES",     icon: Gamepad2,    component: GamesSection, overlay: null,                                className: "flex flex-col justify-center pl-16 lg:pl-24" },
+  { id: "analytics", label: "ANALYTICS", icon: Wrench,      component: ToolsSection, overlay: "bg-background/96",                  className: "bg-background flex flex-col justify-center pl-16 lg:pl-24" },
+  { id: "music",     label: "MUSIC",     icon: Music2,      component: MusicSection, overlay: "bg-background/60 backdrop-blur-sm", className: "bg-background flex flex-col justify-center pl-16 lg:pl-24" },
+  { id: "shop",      label: "SHOP",      icon: ShoppingBag, component: ShopSection,  overlay: "bg-background/96",                  className: "bg-background flex flex-col justify-center pl-16 lg:pl-24" },
+];
+```
+
+---
+
+**Exact line-by-line changes:**
+
+**1. Line 17** — `NUM_SECTIONS` becomes derived (not hardcoded):
+```ts
+// Before:
+const NUM_SECTIONS = 6;
+// After:
+const NUM_SECTIONS = PAGE_CONFIG.length; // auto-updates when pages added/removed
+```
+Requires `PAGE_CONFIG` to be defined above `CircuitOverlay`. Safe — section functions are hoisted (`function` declarations).
+
+**2. Line 22** — `buildWaypoints` scale factor:
+```ts
+// Before:
+const scale = totalWidth / 6000;
+// After:
+const scale = totalWidth / (NUM_SECTIONS * 1000); // 1000px per section
+```
+
+**3. Lines 287–309** — `Section` component gains `overlay`, `index`, `total` props; renders overlay div and counter internally:
+```tsx
+// Before props: { children, transparent?, className? }
+// After props:  { children, overlay, index, total, className? }
+// Renders overlay div at z=10 if overlay is non-null
+// Renders section counter (e.g. "02 / 07") using index + total — auto-updates
+// Removes: transparent prop (overlay: null = transparent)
+```
+
+**4. Lines 331–405 (HomeSection)** — remove `<Section>` wrapper; remove overlay div (line 333); remove hardcoded counter (lines 400–403). Returns inner content only — Section wrapper rendered by scroll container.
+
+**5. Lines 417–461 (GamesSection)** — same: remove `<Section>` wrapper; remove hardcoded counter (lines 456–459).
+
+**6. Lines 474–527 (MusicSection)** — same: remove `<Section>` wrapper; remove overlay div (line 476); remove counter (lines 522–525).
+
+**7. Lines 541–603 (ToolsSection)** — same: remove `<Section>` wrapper; remove overlay div (line 543); remove counter (lines 598–601).
+
+**8. Lines 616–667 (BlogSection)** — same: remove `<Section>` wrapper; remove overlay div (line 618); remove counter (lines 662–665).
+
+**9. Lines 699–759 (ShopSection)** — same: remove `<Section>` wrapper; remove overlay div (line 701); remove counter (lines 754–757).
+
+**10. Lines 763–764** — replace `PAGES[]` + `PAGE_ICONS[]` with `PAGE_CONFIG` (already moved to top of file).
+
+**11. Lines 814–829** — nav map updates:
+```tsx
+// Before:
+{PAGES.map((page, i) => { const Icon = PAGE_ICONS[i]; ... {page} ... })}
+// After:
+{PAGE_CONFIG.map((page, i) => { ... {page.label} ... })}
+```
+
+**12. Line 834** — dynamic total:
+```tsx
+// Before:  {" / 06"}
+// After:   {` / ${String(PAGE_CONFIG.length).padStart(2, "0")}`}
+```
+
+**13. Lines 848–853** — scroll container renders from config:
+```tsx
+// Before:
+<HomeSection onNavigate={navigateTo} />
+<BlogSection />
+...
+
+// After:
+{PAGE_CONFIG.map((page, i) => (
+  <Section key={page.id} overlay={page.overlay} index={i} total={PAGE_CONFIG.length} className={page.className}>
+    <page.component onNavigate={navigateTo} />
+  </Section>
+))}
+```
+
+---
+
+**Files affected:** `src/app/App.tsx` only — ~13 targeted edits, no new files
+
+**Result:** Adding a new page = one new object in `PAGE_CONFIG`. Zero other changes needed.
+
+**Pending discussion before implementation:** How should the circuit and MatrixBackground handle new pages? (Discussed separately — see session notes.)
+
+---
+
 ### 2026-06-16 — Task Group 4: Color Skin System (FloatingPalette UI)
 **Status:** 🔲 Planned — implement UI first, wire to auth in Session 4C
 **Dependencies:** Auth & Payments system above
