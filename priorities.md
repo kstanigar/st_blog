@@ -5,6 +5,71 @@
 
 ## Current Priorities
 
+### 2026-06-16 — Auth & Payments System
+**Status:** 🔲 Planned — Session 4A up next
+**Plan file:** `auth_payments_plan.md`
+
+**Scope:**
+- Full user auth (Supabase — email/password + Google OAuth, PKCE flow)
+- One-time purchases via Stripe Checkout (hosted)
+- Supabase Edge Function webhook → records purchases to PostgreSQL
+- FloatingPalette UI wired to real purchase state (locked/unlocked per user)
+- AWS Amplify deployment
+
+**Monetization tiers:**
+| Product | Price | `product_id` |
+|---|---|---|
+| Skin: NEON GHOST | $2.99 | `skin_neon_ghost` |
+| Skin: TOXIC | $2.99 | `skin_toxic` |
+| Skin: SOLAR FLARE | $2.99 | `skin_solar_flare` |
+| Skin: IVORY STATIC | $2.99 | `skin_ivory_static` |
+| Skin: BLOOD CODE | $2.99 | `skin_blood_code` |
+| Skin: EMBER | $2.99 | `skin_ember` |
+| Color Wheel (hue slider) | $7.99 | `color_wheel` |
+| Rainbow Cycle + speed control | $9.99 | `rainbow_cycle` |
+
+**Session breakdown:**
+- [ ] **Session 4A** — Phase 1–3: Supabase setup + DB schema + auth modal
+- [ ] **Session 4B** — Phase 4–6: Stripe products + Checkout + webhook Edge Function
+- [ ] **Session 4C** — Phase 7–8: FloatingPalette wired to purchases + AWS Amplify deploy
+
+**Security requirements (researched):**
+- RLS on `purchases` table — `auth.uid() = user_id` policy
+- `stripe_session_id` unique constraint — safe webhook retries, no duplicate unlocks
+- Anon key only in browser bundle — service role key in Edge Function secrets only
+- Stripe webhook HMAC signature verified on every request
+- CSP headers on CloudFront/Amplify
+
+**Files to create:**
+- `src/lib/supabase.ts` — client singleton
+- `src/lib/stripe.ts` — loadStripe singleton
+- `src/lib/purchases.ts` — fetch user purchases as a Set
+- `src/hooks/useAuth.ts` — auth state hook
+- `src/hooks/usePurchases.ts` — purchases state hook
+- `src/context/AuthContext.tsx` — app-wide auth provider
+- `src/app/AuthModal.tsx` — login/signup modal
+- `src/app/FloatingPalette.tsx` — color skin modal (Task Group 4, wired to purchases)
+- `supabase/functions/stripe-webhook/index.ts` — Edge Function
+- `supabase/migrations/001_purchases.sql` — schema + RLS policies
+
+---
+
+### 2026-06-16 — Task Group 4: Color Skin System (FloatingPalette UI)
+**Status:** 🔲 Planned — implement UI first, wire to auth in Session 4C
+**Dependencies:** Auth & Payments system above
+
+**Scope:** FloatingPalette modal with named skins, hue slider, rainbow cycle, master toggle
+- Fixed bottom-right `[CUSTOMIZE]` button opens modal
+- Top section: 6 named skin swatches (radio buttons, locked until purchased)
+- Middle section: hue slider (full spectrum, locked behind `color_wheel` purchase)
+- Bottom section: rainbow cycle toggle + speed control (locked behind `rainbow_cycle`)
+- Master toggle: on/off reverts to default cyan without losing chosen skin
+- `applyHue(hue)` writes to `--primary` on `:root` — entire site recolors via color-mix cascade
+- `localStorage` persists chosen skin across sessions (works before auth too for free cyan skin)
+- Canvas sync: `MatrixBackground` accepts `primaryColor` prop, re-reads on skin change
+
+---
+
 ### 2026-06-15 — Theme Modularization & Circuit Responsive Fix
 **Status:** ✅ Complete
 

@@ -3,6 +3,30 @@
 
 ---
 
+## 2026-06-16 — Session 4: Auth & Payments Planning (in progress)
+
+**Completed:**
+- Researched 2026 best practices: Supabase v2 PKCE auth, Stripe Checkout, Supabase Edge Functions for webhooks, AWS Amplify deployment, RLS security
+- Created full implementation plan: `auth_payments_plan.md` (9 phases, 3 sessions estimated)
+- Defined monetization tiers: 6 named skins @ $2.99, color wheel @ $7.99, rainbow cycle @ $9.99
+- Committed session 3 changes to `feat/theme-modularization` branch
+
+**Architecture decided:**
+- Supabase: auth (PKCE) + PostgreSQL (purchases table with RLS)
+- Stripe Checkout (hosted) for payments — PCI handled by Stripe
+- Supabase Edge Function receives Stripe webhook → records purchase
+- AWS Amplify for frontend deployment (CI/CD, SPA routing, auto SSL)
+- Single database platform — no second service needed
+
+**Next:**
+- Session 4A: Supabase project setup + database migration + auth modal in React
+- Session 4B: Stripe products + Checkout session + webhook Edge Function
+- Session 4C: FloatingPalette wired to real purchases + AWS deploy
+
+**Key file:** `auth_payments_plan.md` — full task list, schema, file structure, security checklist
+
+---
+
 ## 2026-06-16 — Session 3: Page Reorder, Theme Modularization (complete)
 
 **Completed:**
