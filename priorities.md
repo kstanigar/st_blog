@@ -18,19 +18,8 @@
 
 ---
 
-### 2026-06-16 — Phase 2: Page Modularity + Template System
-**Status:** 🔲 Planned — approved, ready to implement
-**Plan file:** `phase2_page_templates_plan.md`
-
-- 7 new files in `src/app/templates/` (6 layout templates + index.ts)
-- 13 targeted edits to `App.tsx` — exact line numbers in plan file
-- Replace `PAGES[]` + `PAGE_ICONS[]` with `PAGE_CONFIG` array
-- Adding a page = one `PAGE_CONFIG` entry + content component. Nav, counter, circuit all update automatically.
-
----
-
-### 2026-06-16 — Accordion Routing System
-**Status:** 🔲 Planned — next after Phase 2
+### 2026-06-17 — Accordion Routing System
+**Status:** 🔲 Planned — implement FIRST (before Phase 2)
 **Plan file:** `accordion_routing_plan.md`
 
 - Cards/tiles navigate to dedicated routes: `/blog`, `/games`, `/analytics`, `/music`, `/shop`
@@ -38,6 +27,18 @@
 - Back button returns to `/` (horizontal scroll site)
 - Dependencies: `react-router-dom` + `@radix-ui/react-accordion` — both already installed
 - 8 new files, 14 targeted edits to `App.tsx`, full replacement of `main.tsx`
+
+---
+
+### 2026-06-16 — Phase 2: Page Modularity + Template System
+**Status:** 🔲 Planned — implement AFTER accordion routing
+**Plan file:** `phase2_page_templates_plan.md`
+
+- 7 new files in `src/app/templates/` (6 layout templates + index.ts)
+- 13 targeted edits to `App.tsx` — exact line numbers in plan file
+- Replace `PAGES[]` + `PAGE_ICONS[]` with `PAGE_CONFIG` array
+- Adding a page = one `PAGE_CONFIG` entry + content component. Nav, counter, circuit all update automatically.
+- **Why after routing:** sections already have `onCardClick` prop wired — Phase 2 strips boilerplate cleanly with no retrofitting
 
 ---
 
