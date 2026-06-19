@@ -3,6 +3,58 @@
 
 ---
 
+## 2026-06-19 — Session 9: Doc Cleanup + Priority Switch
+
+**Completed:**
+- Archived 3 completed plan files → `archives/`: `back_button_fix_plan.md`, `accordion_routing_plan.md`, `phase2_page_templates_plan.md`
+- Updated `priorities.md` plan file pointers to reflect archive paths
+- Switched priority order: Auth & Payments now NEXT UP, FloatingPalette after
+
+**Priority order (updated):**
+1. Auth & Payments — `auth_payments_plan.md` — NEXT UP (Session 4A: Supabase setup)
+2. Task Group 4 FloatingPalette — `task_group4_floating_palette_plan.md` — after Auth & Payments
+3. Wheel scroll — deferred, `wheel_scroll_fix_plan.md`
+
+---
+
+## 2026-06-19 — Session 8: Back Button Fix
+
+**Completed:**
+- Back button now returns to originating section after navigating to a sub-route (e.g. `/blog`)
+- Fix: `sessionStorage` — write section index on card click, read and clear on App mount with `behavior: "instant"` scroll restore
+- Note: `location.state` approach attempted first but failed — state attaches to destination route (`/blog`), not source (`/`), so back navigation yields null state on `/`
+
+**Deferred:**
+- Wheel scroll navigation — 3 JS attempts, all reverted; `scrollSnapStop: always` CSS kept; arrow keys still work; full history in `wheel_scroll_fix_plan.md`
+
+**Priority order (updated):**
+1. Task Group 4 FloatingPalette — `task_group4_floating_palette_plan.md` — NEXT UP
+2. Auth & Payments — `auth_payments_plan.md`
+3. Wheel scroll — deferred, `wheel_scroll_fix_plan.md`
+
+---
+
+## 2026-06-19 — Session 7: Scroll Navigation + Bug Docs
+
+**Completed:**
+- Committed and merged `feat/phase2-templates` — Phase 2 template system live on main
+- Verified template system works — tested by adding/reverting a TOOLS page (7th page); confirmed PAGE_CONFIG pattern works correctly; circuit waypoints are hand-tuned for 6 sections and would need updating for permanent new pages
+- Implemented wheel scroll navigation (CSS + JS) — CSS `scrollSnapStop: always` added to container and sections; JS wheel handler implemented with 400ms debounce
+
+**Deferred:**
+- Wheel scroll navigation — 3 JS attempts, all reverted (skipped 4 pages → 2 pages → couldn't resolve); `scrollSnapStop: always` CSS kept; arrow keys still work; full attempt history in `wheel_scroll_fix_plan.md`
+
+**Documented (not yet implemented):**
+- Back button fix — `back_button_fix_plan.md` — documented, implemented in Session 8
+
+**Priority order (updated):**
+1. ~~Back button fix~~ ✅ Done — Session 8
+2. Task Group 4 FloatingPalette — `task_group4_floating_palette_plan.md`
+3. Auth & Payments — `auth_payments_plan.md`
+4. Wheel scroll — deferred, `wheel_scroll_fix_plan.md`
+
+---
+
 ## 2026-06-19 — Session 6: Accordion Routing + Phase 2 Templates
 
 **Completed:**
