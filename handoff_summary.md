@@ -3,6 +3,25 @@
 
 ---
 
+## 2026-06-17 — Session 5: Planning & Documentation Cleanup
+
+**Completed:**
+- Planned Accordion Routing System — cards navigate to `/blog`, `/games`, etc.; vertical accordion pages with hash-based auto-open; full plan in `accordion_routing_plan.md`
+- Reordered priorities: Accordion Routing now before Phase 2 (analysis confirmed no conflicts, routing-first means every new template page gets navigation for free)
+- Migrated large plan blocks out of `priorities.md` into separate files: `phase2_page_templates_plan.md`, `task_group4_floating_palette_plan.md`
+- Created `archives/` folder — manual archive workflow: say "archive X_plan.md" when complete
+- `priorities.md` trimmed from 688 lines to ~80 lines — all entries now ≤15 lines with plan file pointers
+
+**Priority order (confirmed):**
+1. Accordion Routing — `accordion_routing_plan.md` — next up
+2. Phase 2 Template System — `phase2_page_templates_plan.md`
+3. Task Group 4 FloatingPalette — `task_group4_floating_palette_plan.md`
+4. Auth & Payments — `auth_payments_plan.md`
+
+**Key decision:** Accordion routing before Phase 2 — haiku agent confirmed no line conflicts, routing is self-contained, Phase 2 cleanup is easier with onCardClick already in place.
+
+---
+
 ## 2026-06-16 — Session 4: Auth & Payments Planning (in progress)
 
 **Completed:**

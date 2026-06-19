@@ -11,6 +11,8 @@ import {
   Cpu,
   Terminal,
 } from "lucide-react";
+import { useNavigate } from "react-router";
+import { slug } from "../lib/utils";
 
 // ─── Circuit path waypoints ────────────────────────────────────────────────
 // Number of horizontal-scroll sections — drives circuit width and resistor spacing
@@ -406,7 +408,7 @@ function HomeSection({ onNavigate }: { onNavigate: (i: number) => void }) {
 }
 
 // ─── GAMES (transparent — shows matrix through) ────────────────────────────
-function GamesSection() {
+function GamesSection({ onCardClick }: { onCardClick: (path: string) => void }) {
   const articles = [
     { title: "Unity DOTS & ECS in Production", tag: "ARCHITECTURE", reads: "6.2K", mins: 14 },
     { title: "WebGPU Compute Shaders", tag: "GRAPHICS", reads: "4.8K", mins: 11 },
@@ -433,6 +435,7 @@ function GamesSection() {
             <div
               key={a.title}
               className="border border-primary/15 bg-background/40 backdrop-blur-md p-5 cursor-pointer group hover:border-primary/50 hover:bg-background/60 transition-all"
+              onClick={() => onCardClick('/games#' + slug(a.title))}
             >
               <div className="font-mono text-[9px] tracking-widest text-primary mb-3">{a.tag}</div>
               <div className="font-display text-xs font-bold text-foreground leading-snug mb-4">
@@ -462,7 +465,7 @@ function GamesSection() {
 }
 
 // ─── MUSIC ────────────────────────────────────────────────────────────────
-function MusicSection() {
+function MusicSection({ onCardClick }: { onCardClick: (path: string) => void }) {
   const tools = [
     { name: "FMOD Studio", desc: "Adaptive audio for interactive media", type: "DAW", affiliate: true },
     { name: "RNBO", desc: "Max/MSP patches to embedded targets", type: "DSP", affiliate: false },
@@ -493,6 +496,7 @@ function MusicSection() {
             <div
               key={t.name}
               className="flex items-center gap-5 py-4 border-b border-border bg-background/60 backdrop-blur-sm hover:border-primary/30 hover:bg-primary/5 cursor-pointer group transition-all px-1"
+              onClick={() => onCardClick('/music#' + slug(t.name))}
             >
               <div className="font-mono text-[9px] text-muted-foreground/60 w-6 shrink-0 tabular-nums">
                 {String(i + 1).padStart(2, "0")}
@@ -528,7 +532,7 @@ function MusicSection() {
 }
 
 // ─── TOOLS ────────────────────────────────────────────────────────────────
-function ToolsSection() {
+function ToolsSection({ onCardClick }: { onCardClick: (path: string) => void }) {
   const tools = [
     { name: "Tauri 2", category: "Desktop", score: 9.4, desc: "Rust-backed native apps" },
     { name: "Bun 1.2", category: "Runtime", score: 9.1, desc: "All-in-one JS toolchain" },
@@ -563,6 +567,7 @@ function ToolsSection() {
             <div
               key={t.name}
               className="p-5 border-r border-b border-border bg-card hover:bg-primary/5 cursor-pointer group transition-colors"
+              onClick={() => onCardClick('/analytics#' + slug(t.name))}
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
@@ -604,7 +609,7 @@ function ToolsSection() {
 }
 
 // ─── BLOG ─────────────────────────────────────────────────────────────────
-function BlogSection() {
+function BlogSection({ onCardClick }: { onCardClick: (path: string) => void }) {
   const posts = [
     { date: "2026-06-10", title: "WebGPU Compute Pipelines in Real Games", tag: "GPU", mins: 14 },
     { date: "2026-06-07", title: "ECS vs OOP: A 500K Entity Benchmark", tag: "ARCH", mins: 8 },
@@ -635,6 +640,7 @@ function BlogSection() {
             <div
               key={p.title}
               className="flex gap-5 items-start py-5 border-b border-border bg-background/20 backdrop-blur-xl hover:border-primary/30 cursor-pointer group transition-colors"
+              onClick={() => onCardClick('/blog#' + slug(p.title))}
             >
               <div className="font-mono text-[9px] text-muted-foreground/50 pt-px w-20 shrink-0 tabular-nums">
                 {p.date}
@@ -668,7 +674,7 @@ function BlogSection() {
 }
 
 // ─── SHOP ─────────────────────────────────────────────────────────────────
-function ShopSection() {
+function ShopSection({ onCardClick }: { onCardClick: (path: string) => void }) {
   const products = [
     {
       name: "GPU Compute Bundle",
@@ -718,6 +724,7 @@ function ShopSection() {
             <div
               key={p.name}
               className="border border-border bg-card p-5 w-44 flex flex-col hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group"
+              onClick={() => onCardClick('/shop#' + slug(p.name))}
               style={{ minWidth: 176 }}
             >
               <div className="h-5 mb-3">
@@ -766,6 +773,7 @@ const PAGE_ICONS = [Cpu, BookOpen, Gamepad2, Wrench, Music2, ShoppingBag];
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const el = containerRef.current;
@@ -846,11 +854,11 @@ export default function App() {
         }}
       >
         <HomeSection onNavigate={navigateTo} />
-        <BlogSection />
-        <GamesSection />
-        <ToolsSection />
-        <MusicSection />
-        <ShopSection />
+        <BlogSection onCardClick={navigate} />
+        <GamesSection onCardClick={navigate} />
+        <ToolsSection onCardClick={navigate} />
+        <MusicSection onCardClick={navigate} />
+        <ShopSection onCardClick={navigate} />
       </div>
 
       {/* Hide WebKit scrollbar */}
