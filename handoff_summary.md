@@ -3,6 +3,24 @@
 
 ---
 
+## 2026-06-19 — Session 6: Accordion Routing + Phase 2 Templates
+
+**Completed:**
+- Implemented Accordion Routing — cards navigate to `/blog`, `/games`, `/analytics`, `/music`, `/shop`; each route is a vertical accordion page; clicked item auto-opens via URL hash; back button returns to originating section via `navigate(-1)`
+- Fixed BrowserRouter `basename` using `import.meta.env.BASE_URL` for Vite base path compatibility
+- Implemented Phase 2 Template System — extracted `GridOverlay` to shared component, created 6 layout templates + `PAGE_CONFIG` array; `SectionShell` replaces `Section`; adding a new page = one `PAGE_CONFIG` entry + content component
+
+**Known issue (deferred):**
+- Circuit SVG z-index bleeds through Analytics/Shop cards on hover — multiple fixes attempted (z-30, isolate, willChange removal), none resolved; left for future investigation
+
+**Priority order (updated):**
+1. ~~Accordion Routing~~ ✅ Done
+2. ~~Phase 2 Template System~~ ✅ Done
+3. Task Group 4 FloatingPalette — `task_group4_floating_palette_plan.md` — **next up**
+4. Auth & Payments — `auth_payments_plan.md`
+
+---
+
 ## 2026-06-17 — Session 5: Planning & Documentation Cleanup
 
 **Completed:**

@@ -18,32 +18,27 @@
 
 ---
 
-### 2026-06-17 — Accordion Routing System
-**Status:** 🔲 Planned — implement FIRST (before Phase 2)
+### 2026-06-19 — Accordion Routing System
+**Status:** ✅ Complete — Session 6
 **Plan file:** `accordion_routing_plan.md`
 
-- Cards/tiles navigate to dedicated routes: `/blog`, `/games`, `/analytics`, `/music`, `/shop`
-- Each route = vertical accordion page. Clicked item auto-opens via URL hash (`/blog#post-slug`)
-- Back button returns to `/` (horizontal scroll site)
-- Dependencies: `react-router-dom` + `@radix-ui/react-accordion` — both already installed
-- 8 new files, 14 targeted edits to `App.tsx`, full replacement of `main.tsx`
+- Cards/tiles navigate to dedicated routes — back button returns to originating section via `navigate(-1)`
+- Note: Circuit z-index bleeds through Analytics/Shop cards on hover — left for future investigation
 
 ---
 
-### 2026-06-16 — Phase 2: Page Modularity + Template System
-**Status:** 🔲 Planned — implement AFTER accordion routing
+### 2026-06-19 — Phase 2: Page Modularity + Template System
+**Status:** ✅ Complete — Session 6
 **Plan file:** `phase2_page_templates_plan.md`
 
-- 7 new files in `src/app/templates/` (6 layout templates + index.ts)
-- 13 targeted edits to `App.tsx` — exact line numbers in plan file
-- Replace `PAGES[]` + `PAGE_ICONS[]` with `PAGE_CONFIG` array
-- Adding a page = one `PAGE_CONFIG` entry + content component. Nav, counter, circuit all update automatically.
-- **Why after routing:** sections already have `onCardClick` prop wired — Phase 2 strips boilerplate cleanly with no retrofitting
+- 8 new files: `src/components/GridOverlay.tsx`, `src/app/templates/` (6 templates + index.ts)
+- `PAGE_CONFIG` drives nav, counter, circuit, and section renders — adding a page = one entry + content component
+- `SectionShell` replaces `Section` — handles scroll snap + counter for all pages
 
 ---
 
 ### 2026-06-16 — Task Group 4: Color Skin System (FloatingPalette UI)
-**Status:** 🔲 Planned — implement UI first, wire to auth in Session 4C
+**Status:** 🔲 Planned — NEXT UP
 **Plan file:** `task_group4_floating_palette_plan.md`
 **Dependencies:** Auth & Payments (for purchase gating)
 
