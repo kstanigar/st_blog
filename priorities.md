@@ -6,8 +6,22 @@
 
 ## Current Priorities
 
+### 2026-06-19 — Wheel Scroll Navigation
+**Status:** ⏸ Deferred — reverted, needs fresh approach
+**Plan file:** `wheel_scroll_fix_plan.md`
+
+- CSS fix (`scrollSnapStop: always`) kept — prevents section-skipping on fast flings
+- JS wheel handler attempted 3 times, all reverted:
+  - Attempt 1: `isScrolling` permanently locked → skipped all pages
+  - Attempt 2: `[active]` deps + reset at top of effect → skipped 4 pages
+  - Attempt 3: `activeRef` + empty deps + 800ms debounce → skipped 2 pages
+- Arrow key navigation still works
+- Deferred — revisit in a future session with a fresh approach
+
+---
+
 ### 2026-06-16 — Auth & Payments System
-**Status:** 🔲 Planned — Session 4A up next
+**Status:** 🔲 Planned — NEXT UP
 **Plan file:** `auth_payments_plan.md`
 
 - [ ] Session 4A — Supabase setup + DB schema + auth modal
@@ -18,27 +32,9 @@
 
 ---
 
-### 2026-06-19 — Accordion Routing System
-**Status:** ✅ Complete — Session 6
-**Plan file:** `accordion_routing_plan.md`
-
-- Cards/tiles navigate to dedicated routes — back button returns to originating section via `navigate(-1)`
-- Note: Circuit z-index bleeds through Analytics/Shop cards on hover — left for future investigation
-
----
-
-### 2026-06-19 — Phase 2: Page Modularity + Template System
-**Status:** ✅ Complete — Session 6
-**Plan file:** `phase2_page_templates_plan.md`
-
-- 8 new files: `src/components/GridOverlay.tsx`, `src/app/templates/` (6 templates + index.ts)
-- `PAGE_CONFIG` drives nav, counter, circuit, and section renders — adding a page = one entry + content component
-- `SectionShell` replaces `Section` — handles scroll snap + counter for all pages
-
----
 
 ### 2026-06-16 — Task Group 4: Color Skin System (FloatingPalette UI)
-**Status:** 🔲 Planned — NEXT UP
+**Status:** 🔲 Planned — after Auth & Payments
 **Plan file:** `task_group4_floating_palette_plan.md`
 **Dependencies:** Auth & Payments (for purchase gating)
 
@@ -48,6 +44,8 @@
 - MatrixBackground canvas sync via `primaryColor` prop
 
 ---
+
+## Completed Priorities
 
 ### 2026-06-15 — Theme Modularization & Circuit Responsive Fix
 **Status:** ✅ Complete — Session 3
@@ -69,7 +67,34 @@
 
 ---
 
-## Completed Priorities
+### 2026-06-19 — Back Button Fix (Restore Originating Section)
+**Status:** ✅ Complete — Session 8
+**Plan file:** `archives/back_button_fix_plan.md`
+
+- Back button now returns to originating section
+- Fix: `sessionStorage` — write section index before navigate, read and clear on App mount
+- Note: `location.state` approach failed — state attaches to destination route, not source
+
+---
+
+### 2026-06-19 — Accordion Routing System
+**Status:** ✅ Complete — Session 6
+**Plan file:** `archives/accordion_routing_plan.md`
+
+- Cards/tiles navigate to dedicated routes — back button returns to originating section via `navigate(-1)`
+- Note: Circuit z-index bleeds through Analytics/Shop cards on hover — left for future investigation
+
+---
+
+### 2026-06-19 — Phase 2: Page Modularity + Template System
+**Status:** ✅ Complete — Session 6
+**Plan file:** `archives/phase2_page_templates_plan.md`
+
+- 8 new files: `src/components/GridOverlay.tsx`, `src/app/templates/` (6 templates + index.ts)
+- `PAGE_CONFIG` drives nav, counter, circuit, and section renders — adding a page = one entry + content component
+- `SectionShell` replaces `Section` — handles scroll snap + counter for all pages
+
+---
 
 ### 2026-06-15 — GitHub Pages Deployment Fix
 **Status:** ✅ Complete
