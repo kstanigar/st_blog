@@ -13,15 +13,35 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { slug } from "../lib/utils";
+import { GridOverlay } from "../components/GridOverlay";
+import { PAGE_TEMPLATES } from "./templates";
+
+// ─── Page config ───────────────────────────────────────────────────────────
+type PageConfig = {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number }>;
+  component: React.ComponentType<{ onNavigate?: (i: number) => void; onCardClick?: (path: string) => void }>;
+  template: number | null;
+};
+
+const PAGE_CONFIG: PageConfig[] = [
+  { id: "home",      label: "HOME",      icon: Cpu,         component: HomeSection,  template: null },
+  { id: "blog",      label: "BLOG",      icon: BookOpen,    component: BlogSection,  template: 0 },
+  { id: "games",     label: "GAMES",     icon: Gamepad2,    component: GamesSection, template: 1 },
+  { id: "analytics", label: "ANALYTICS", icon: Wrench,      component: ToolsSection, template: 2 },
+  { id: "music",     label: "MUSIC",     icon: Music2,      component: MusicSection, template: 3 },
+  { id: "shop",      label: "SHOP",      icon: ShoppingBag, component: ShopSection,  template: 4 },
+];
 
 // ─── Circuit path waypoints ────────────────────────────────────────────────
 // Number of horizontal-scroll sections — drives circuit width and resistor spacing
-const NUM_SECTIONS = 6;
+const NUM_SECTIONS = PAGE_CONFIG.length;
 
 // Original waypoints were hand-tuned for a 6000px canvas (6 sections × ~1000px).
 // Scaling only the x-axis keeps the vertical zigzag rhythm intact at any width.
 function buildWaypoints(totalWidth: number): [number, number][] {
-  const scale = totalWidth / 6000;
+  const scale = totalWidth / (NUM_SECTIONS * 1000);
   const raw: [number, number][] = [
     [0, 720], [120, 720], [120, 640], [300, 640], [300, 760], [480, 760], [480, 680],
     [800, 680], [800, 580], [1000, 580], [1000, 720], [1200, 720], [1200, 640],
@@ -286,51 +306,29 @@ function CircuitOverlay({
 }
 
 // ─── Shared section wrapper ────────────────────────────────────────────────
-function Section({
-  children,
-  transparent = false,
-  className = "",
-}: {
-  children: React.ReactNode;
-  transparent?: boolean;
-  className?: string;
-}) {
+function SectionShell({ children, index, total }: { children: React.ReactNode; index: number; total: number }) {
   return (
     <div
-      className={`relative flex-shrink-0 overflow-hidden ${className}`}
-      style={{
-        width: "100vw",
-        height: "100vh",
-        scrollSnapAlign: "start",
-        background: transparent ? "transparent" : undefined,
-      }}
+      className="relative flex-shrink-0 overflow-hidden"
+      style={{ width: "100vw", height: "100vh", scrollSnapAlign: "start" }}
     >
       {children}
+      <div
+        className="absolute top-1/2 right-8 -translate-y-1/2 font-mono text-[9px] text-muted-foreground/40 tracking-widest"
+        style={{ writingMode: "vertical-rl" }}
+      >
+        {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+      </div>
     </div>
   );
 }
 
-// ─── Grid overlay ──────────────────────────────────────────────────────────
-function GridOverlay({ opacity = 0.03 }: { opacity?: number }) {
-  return (
-    <div
-      className="absolute inset-0 pointer-events-none"
-      style={{
-        opacity,
-        backgroundImage:
-          "linear-gradient(var(--primary-glow-md) 1px, transparent 1px), linear-gradient(90deg, var(--primary-glow-md) 1px, transparent 1px)",
-        backgroundSize: "64px 64px",
-      }}
-    />
-  );
-}
-
 // ─── HOME ──────────────────────────────────────────────────────────────────
-function HomeSection({ onNavigate }: { onNavigate: (i: number) => void }) {
+function HomeSection({ onNavigate, onCardClick: _onCardClick }: { onNavigate: (i: number) => void; onCardClick?: (path: string) => void }) {
   const navItems = ["BLOG", "GAMES", "ANALYTICS", "MUSIC", "SHOP"];
 
   return (
-    <Section className="bg-background flex flex-col justify-center pl-16 lg:pl-24">
+    <div className="bg-background flex flex-col justify-center pl-16 lg:pl-24 h-full w-full">
       <GridOverlay opacity={0.04} />
       <div className="absolute inset-0 bg-background/80" style={{ zIndex: 10 }} />
 
@@ -397,18 +395,12 @@ function HomeSection({ onNavigate }: { onNavigate: (i: number) => void }) {
         <span className="animate-pulse">SCROLL</span>
         <ChevronRight size={11} className="text-primary" />
       </div>
-
-      {/* Section counter */}
-      <div className="absolute top-1/2 right-8 -translate-y-1/2 font-mono text-[9px] text-muted-foreground/40 tracking-widest"
-        style={{ writingMode: "vertical-rl" }}>
-        01 / 06
-      </div>
-    </Section>
+    </div>
   );
 }
 
 // ─── GAMES (transparent — shows matrix through) ────────────────────────────
-function GamesSection({ onCardClick }: { onCardClick: (path: string) => void }) {
+function GamesSection({ onCardClick, onNavigate: _onNavigate }: { onCardClick: (path: string) => void; onNavigate?: (i: number) => void }) {
   const articles = [
     { title: "Unity DOTS & ECS in Production", tag: "ARCHITECTURE", reads: "6.2K", mins: 14 },
     { title: "WebGPU Compute Shaders", tag: "GRAPHICS", reads: "4.8K", mins: 11 },
@@ -417,55 +409,35 @@ function GamesSection({ onCardClick }: { onCardClick: (path: string) => void }) 
   ];
 
   return (
-    <Section transparent className="flex flex-col justify-center pl-16 lg:pl-24">
-      <div className="relative z-20">
-        <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.4em] text-primary mb-8">
-          <Gamepad2 size={9} />
-          NODE://GAMES
-        </div>
-        <h2
-          className="font-display font-black uppercase tracking-tight text-foreground mb-12"
-          style={{ fontSize: "clamp(2.5rem, 7vw, 5.5rem)" }}
+    <>
+      {articles.map((a) => (
+        <div
+          key={a.title}
+          className="border border-primary/15 bg-background/40 backdrop-blur-md p-5 cursor-pointer group hover:border-primary/50 hover:bg-background/60 transition-all"
+          onClick={() => onCardClick('/games#' + slug(a.title))}
         >
-          GAMES
-        </h2>
-
-        <div className="grid grid-cols-2 gap-3 max-w-2xl">
-          {articles.map((a) => (
+          <div className="font-mono text-[9px] tracking-widest text-primary mb-3">{a.tag}</div>
+          <div className="font-display text-xs font-bold text-foreground leading-snug mb-4">
+            {a.title}
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="font-mono text-[9px] text-muted-foreground">{a.reads} reads</div>
+            <div className="font-mono text-[9px] text-muted-foreground">{a.mins} min</div>
+          </div>
+          <div className="mt-3 h-px bg-border">
             <div
-              key={a.title}
-              className="border border-primary/15 bg-background/40 backdrop-blur-md p-5 cursor-pointer group hover:border-primary/50 hover:bg-background/60 transition-all"
-              onClick={() => onCardClick('/games#' + slug(a.title))}
-            >
-              <div className="font-mono text-[9px] tracking-widest text-primary mb-3">{a.tag}</div>
-              <div className="font-display text-xs font-bold text-foreground leading-snug mb-4">
-                {a.title}
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="font-mono text-[9px] text-muted-foreground">{a.reads} reads</div>
-                <div className="font-mono text-[9px] text-muted-foreground">{a.mins} min</div>
-              </div>
-              <div className="mt-3 h-px bg-border">
-                <div
-                  className="h-full bg-primary transition-all duration-500 group-hover:w-full"
-                  style={{ width: "0%", boxShadow: "0 0 4px var(--primary-glow-md)" }}
-                />
-              </div>
-            </div>
-          ))}
+              className="h-full bg-primary transition-all duration-500 group-hover:w-full"
+              style={{ width: "0%", boxShadow: "0 0 4px var(--primary-glow-md)" }}
+            />
+          </div>
         </div>
-      </div>
-
-      <div className="absolute top-1/2 right-8 -translate-y-1/2 font-mono text-[9px] text-muted-foreground/40 tracking-widest"
-        style={{ writingMode: "vertical-rl" }}>
-        03 / 06
-      </div>
-    </Section>
+      ))}
+    </>
   );
 }
 
 // ─── MUSIC ────────────────────────────────────────────────────────────────
-function MusicSection({ onCardClick }: { onCardClick: (path: string) => void }) {
+function MusicSection({ onCardClick, onNavigate: _onNavigate }: { onCardClick: (path: string) => void; onNavigate?: (i: number) => void }) {
   const tools = [
     { name: "FMOD Studio", desc: "Adaptive audio for interactive media", type: "DAW", affiliate: true },
     { name: "RNBO", desc: "Max/MSP patches to embedded targets", type: "DSP", affiliate: false },
@@ -475,64 +447,41 @@ function MusicSection({ onCardClick }: { onCardClick: (path: string) => void }) 
   ];
 
   return (
-    <Section className="bg-background flex flex-col justify-center pl-16 lg:pl-24">
-      <div className="absolute inset-0 bg-background/60" style={{ zIndex: 10 }} />
-      <GridOverlay />
-
-      <div className="relative z-20">
-        <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.4em] text-primary mb-8">
-          <Music2 size={9} />
-          NODE://MUSIC
-        </div>
-        <h2
-          className="font-display font-black uppercase tracking-tight text-foreground mb-12"
-          style={{ fontSize: "clamp(2.5rem, 7vw, 5.5rem)" }}
+    <>
+      {tools.map((t, i) => (
+        <div
+          key={t.name}
+          className="flex items-center gap-5 py-4 border-b border-border bg-background/60 backdrop-blur-sm hover:border-primary/30 hover:bg-primary/5 cursor-pointer group transition-all px-1"
+          onClick={() => onCardClick('/music#' + slug(t.name))}
         >
-          MUSIC
-        </h2>
-
-        <div className="space-y-px max-w-lg border-t border-border">
-          {tools.map((t, i) => (
-            <div
-              key={t.name}
-              className="flex items-center gap-5 py-4 border-b border-border bg-background/60 backdrop-blur-sm hover:border-primary/30 hover:bg-primary/5 cursor-pointer group transition-all px-1"
-              onClick={() => onCardClick('/music#' + slug(t.name))}
-            >
-              <div className="font-mono text-[9px] text-muted-foreground/60 w-6 shrink-0 tabular-nums">
-                {String(i + 1).padStart(2, "0")}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-display text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-                  {t.name}
-                </div>
-                <div className="font-mono text-[9px] text-muted-foreground mt-0.5 truncate">{t.desc}</div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {t.affiliate && (
-                  <span className="font-mono text-[8px] text-accent border border-accent/30 px-1.5 py-0.5 tracking-widest">
-                    AFF
-                  </span>
-                )}
-                <span className="font-mono text-[9px] text-primary border border-primary/20 px-2 py-0.5">
-                  {t.type}
-                </span>
-              </div>
-              <ArrowRight size={10} className="text-muted-foreground/40 group-hover:text-primary transition-colors shrink-0" />
+          <div className="font-mono text-[9px] text-muted-foreground/60 w-6 shrink-0 tabular-nums">
+            {String(i + 1).padStart(2, "0")}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-display text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+              {t.name}
             </div>
-          ))}
+            <div className="font-mono text-[9px] text-muted-foreground mt-0.5 truncate">{t.desc}</div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {t.affiliate && (
+              <span className="font-mono text-[8px] text-accent border border-accent/30 px-1.5 py-0.5 tracking-widest">
+                AFF
+              </span>
+            )}
+            <span className="font-mono text-[9px] text-primary border border-primary/20 px-2 py-0.5">
+              {t.type}
+            </span>
+          </div>
+          <ArrowRight size={10} className="text-muted-foreground/40 group-hover:text-primary transition-colors shrink-0" />
         </div>
-      </div>
-
-      <div className="absolute top-1/2 right-8 -translate-y-1/2 font-mono text-[9px] text-muted-foreground/40 tracking-widest"
-        style={{ writingMode: "vertical-rl" }}>
-        05 / 06
-      </div>
-    </Section>
+      ))}
+    </>
   );
 }
 
 // ─── TOOLS ────────────────────────────────────────────────────────────────
-function ToolsSection({ onCardClick }: { onCardClick: (path: string) => void }) {
+function ToolsSection({ onCardClick, onNavigate: _onNavigate }: { onCardClick: (path: string) => void; onNavigate?: (i: number) => void }) {
   const tools = [
     { name: "Tauri 2", category: "Desktop", score: 9.4, desc: "Rust-backed native apps" },
     { name: "Bun 1.2", category: "Runtime", score: 9.1, desc: "All-in-one JS toolchain" },
@@ -543,73 +492,47 @@ function ToolsSection({ onCardClick }: { onCardClick: (path: string) => void }) 
   ];
 
   return (
-    <Section className="bg-background flex flex-col justify-center pl-16 lg:pl-24">
-      <div className="absolute inset-0 bg-background/96" style={{ zIndex: 10 }} />
-      <GridOverlay />
-
-      <div className="relative z-20">
-        <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.4em] text-primary mb-8">
-          <Wrench size={9} />
-          NODE://ANALYTICS
-        </div>
-        <h2
-          className="font-display font-black uppercase tracking-tight text-foreground mb-12"
-          style={{ fontSize: "clamp(2.5rem, 7vw, 5.5rem)" }}
-        >
-          ANALYTICS
-        </h2>
-
+    <>
+      {tools.map((t) => (
         <div
-          className="grid grid-cols-2 max-w-2xl border-l border-t border-border"
-          style={{ gridTemplateRows: "auto auto auto" }}
+          key={t.name}
+          className="p-5 border-r border-b border-border bg-card hover:bg-primary/5 cursor-pointer group transition-colors"
+          onClick={() => onCardClick('/analytics#' + slug(t.name))}
         >
-          {tools.map((t) => (
-            <div
-              key={t.name}
-              className="p-5 border-r border-b border-border bg-card hover:bg-primary/5 cursor-pointer group transition-colors"
-              onClick={() => onCardClick('/analytics#' + slug(t.name))}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="font-display text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-                    {t.name}
-                  </div>
-                  <div className="font-mono text-[9px] text-muted-foreground mt-0.5">{t.desc}</div>
-                </div>
-                <div
-                  className="font-mono text-sm font-bold tabular-nums"
-                  style={{ color: "var(--primary)", textShadow: "0 0 8px var(--primary-glow-sm)" }}
-                >
-                  {t.score}
-                </div>
+          <div className="flex items-start justify-between mb-2">
+            <div>
+              <div className="font-display text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                {t.name}
               </div>
-              <div className="h-px bg-border mt-4">
-                <div
-                  className="h-full transition-all duration-700 group-hover:opacity-100"
-                  style={{
-                    width: `${(t.score / 10) * 100}%`,
-                    background: "var(--primary)",
-                    boxShadow: "0 0 6px var(--primary-glow-md)",
-                    opacity: 0.6,
-                  }}
-                />
-              </div>
-              <div className="font-mono text-[8px] text-muted-foreground/50 mt-2 tracking-widest">{t.category}</div>
+              <div className="font-mono text-[9px] text-muted-foreground mt-0.5">{t.desc}</div>
             </div>
-          ))}
+            <div
+              className="font-mono text-sm font-bold tabular-nums"
+              style={{ color: "var(--primary)", textShadow: "0 0 8px var(--primary-glow-sm)" }}
+            >
+              {t.score}
+            </div>
+          </div>
+          <div className="h-px bg-border mt-4">
+            <div
+              className="h-full transition-all duration-700 group-hover:opacity-100"
+              style={{
+                width: `${(t.score / 10) * 100}%`,
+                background: "var(--primary)",
+                boxShadow: "0 0 6px var(--primary-glow-md)",
+                opacity: 0.6,
+              }}
+            />
+          </div>
+          <div className="font-mono text-[8px] text-muted-foreground/50 mt-2 tracking-widest">{t.category}</div>
         </div>
-      </div>
-
-      <div className="absolute top-1/2 right-8 -translate-y-1/2 font-mono text-[9px] text-muted-foreground/40 tracking-widest"
-        style={{ writingMode: "vertical-rl" }}>
-        04 / 06
-      </div>
-    </Section>
+      ))}
+    </>
   );
 }
 
 // ─── BLOG ─────────────────────────────────────────────────────────────────
-function BlogSection({ onCardClick }: { onCardClick: (path: string) => void }) {
+function BlogSection({ onCardClick, onNavigate: _onNavigate }: { onCardClick: (path: string) => void; onNavigate?: (i: number) => void }) {
   const posts = [
     { date: "2026-06-10", title: "WebGPU Compute Pipelines in Real Games", tag: "GPU", mins: 14 },
     { date: "2026-06-07", title: "ECS vs OOP: A 500K Entity Benchmark", tag: "ARCH", mins: 8 },
@@ -619,62 +542,39 @@ function BlogSection({ onCardClick }: { onCardClick: (path: string) => void }) {
   ];
 
   return (
-    <Section className="bg-background flex flex-col justify-center pl-16 lg:pl-24">
-      <div className="absolute inset-0 bg-background/20" style={{ zIndex: 10 }} />
-      <GridOverlay />
-
-      <div className="relative z-20">
-        <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.4em] text-primary mb-8">
-          <BookOpen size={9} />
-          NODE://BLOG
-        </div>
-        <h2
-          className="font-display font-black uppercase tracking-tight text-foreground mb-12"
-          style={{ fontSize: "clamp(2.5rem, 7vw, 5.5rem)" }}
+    <>
+      {posts.map((p) => (
+        <div
+          key={p.title}
+          className="flex gap-5 items-start py-5 border-b border-border bg-background/20 backdrop-blur-xl hover:border-primary/30 cursor-pointer group transition-colors"
+          onClick={() => onCardClick('/blog#' + slug(p.title))}
         >
-          BLOG
-        </h2>
-
-        <div className="max-w-xl border-t border-border">
-          {posts.map((p, i) => (
-            <div
-              key={p.title}
-              className="flex gap-5 items-start py-5 border-b border-border bg-background/20 backdrop-blur-xl hover:border-primary/30 cursor-pointer group transition-colors"
-              onClick={() => onCardClick('/blog#' + slug(p.title))}
-            >
-              <div className="font-mono text-[9px] text-muted-foreground/50 pt-px w-20 shrink-0 tabular-nums">
-                {p.date}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-display text-xs font-bold text-foreground group-hover:text-primary transition-colors leading-snug mb-2">
-                  {p.title}
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-mono text-[8px] text-primary border border-primary/25 px-1.5 py-0.5 tracking-widest">
-                    {p.tag}
-                  </span>
-                  <span className="font-mono text-[9px] text-muted-foreground/50">{p.mins} min read</span>
-                </div>
-              </div>
-              <ArrowRight
-                size={10}
-                className="text-muted-foreground/30 group-hover:text-primary transition-colors shrink-0 mt-px"
-              />
+          <div className="font-mono text-[9px] text-muted-foreground/50 pt-px w-20 shrink-0 tabular-nums">
+            {p.date}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-display text-xs font-bold text-foreground group-hover:text-primary transition-colors leading-snug mb-2">
+              {p.title}
             </div>
-          ))}
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-[8px] text-primary border border-primary/25 px-1.5 py-0.5 tracking-widest">
+                {p.tag}
+              </span>
+              <span className="font-mono text-[9px] text-muted-foreground/50">{p.mins} min read</span>
+            </div>
+          </div>
+          <ArrowRight
+            size={10}
+            className="text-muted-foreground/30 group-hover:text-primary transition-colors shrink-0 mt-px"
+          />
         </div>
-      </div>
-
-      <div className="absolute top-1/2 right-8 -translate-y-1/2 font-mono text-[9px] text-muted-foreground/40 tracking-widest"
-        style={{ writingMode: "vertical-rl" }}>
-        02 / 06
-      </div>
-    </Section>
+      ))}
+    </>
   );
 }
 
 // ─── SHOP ─────────────────────────────────────────────────────────────────
-function ShopSection({ onCardClick }: { onCardClick: (path: string) => void }) {
+function ShopSection({ onCardClick, onNavigate: _onNavigate }: { onCardClick: (path: string) => void; onNavigate?: (i: number) => void }) {
   const products = [
     {
       name: "GPU Compute Bundle",
@@ -703,72 +603,43 @@ function ShopSection({ onCardClick }: { onCardClick: (path: string) => void }) {
   ];
 
   return (
-    <Section className="bg-background flex flex-col justify-center pl-16 lg:pl-24">
-      <div className="absolute inset-0 bg-background/96" style={{ zIndex: 10 }} />
-      <GridOverlay />
-
-      <div className="relative z-20">
-        <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.4em] text-primary mb-8">
-          <ShoppingBag size={9} />
-          NODE://SHOP
-        </div>
-        <h2
-          className="font-display font-black uppercase tracking-tight text-foreground mb-12"
-          style={{ fontSize: "clamp(2.5rem, 7vw, 5.5rem)" }}
+    <>
+      {products.map((p) => (
+        <div
+          key={p.name}
+          className="border border-border bg-card p-5 w-44 flex flex-col hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group"
+          onClick={() => onCardClick('/shop#' + slug(p.name))}
+          style={{ minWidth: 176 }}
         >
-          SHOP
-        </h2>
-
-        <div className="flex gap-3">
-          {products.map((p) => (
+          <div className="h-5 mb-3">
+            {p.tag && (
+              <span className="font-mono text-[8px] tracking-widest text-accent border border-accent/30 px-1.5 py-0.5">
+                [{p.tag}]
+              </span>
+            )}
+          </div>
+          <div className="font-display text-xs font-bold text-foreground leading-snug mb-2 group-hover:text-primary transition-colors">
+            {p.name}
+          </div>
+          <div className="font-mono text-[9px] text-muted-foreground leading-relaxed mb-5 flex-1">
+            {p.desc}
+          </div>
+          <div className="flex items-center justify-between mt-auto">
             <div
-              key={p.name}
-              className="border border-border bg-card p-5 w-44 flex flex-col hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group"
-              onClick={() => onCardClick('/shop#' + slug(p.name))}
-              style={{ minWidth: 176 }}
+              className="font-display text-lg font-black"
+              style={{ color: "var(--primary)" }}
             >
-              <div className="h-5 mb-3">
-                {p.tag && (
-                  <span className="font-mono text-[8px] tracking-widest text-accent border border-accent/30 px-1.5 py-0.5">
-                    [{p.tag}]
-                  </span>
-                )}
-              </div>
-              <div className="font-display text-xs font-bold text-foreground leading-snug mb-2 group-hover:text-primary transition-colors">
-                {p.name}
-              </div>
-              <div className="font-mono text-[9px] text-muted-foreground leading-relaxed mb-5 flex-1">
-                {p.desc}
-              </div>
-              <div className="flex items-center justify-between mt-auto">
-                <div
-                  className="font-display text-lg font-black"
-                  style={{ color: "var(--primary)" }}
-                >
-                  {p.price}
-                </div>
-                <ArrowRight size={10} className="text-muted-foreground/40 group-hover:text-primary transition-colors" />
-              </div>
+              {p.price}
             </div>
-          ))}
+            <ArrowRight size={10} className="text-muted-foreground/40 group-hover:text-primary transition-colors" />
+          </div>
         </div>
-
-        <div className="mt-14 font-mono text-[9px] text-muted-foreground/25 tracking-[0.3em]">
-          END OF SIGNAL — STANDING TIGER://2026
-        </div>
-      </div>
-
-      <div className="absolute top-1/2 right-8 -translate-y-1/2 font-mono text-[9px] text-muted-foreground/40 tracking-widest"
-        style={{ writingMode: "vertical-rl" }}>
-        06 / 06
-      </div>
-    </Section>
+      ))}
+    </>
   );
 }
 
 // ─── Root App ──────────────────────────────────────────────────────────────
-const PAGES = ["HOME", "BLOG", "GAMES", "ANALYTICS", "MUSIC", "SHOP"];
-const PAGE_ICONS = [Cpu, BookOpen, Gamepad2, Wrench, Music2, ShoppingBag];
 
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -819,27 +690,24 @@ export default function App() {
         </button>
 
         <div className="flex items-center gap-7">
-          {PAGES.map((page, i) => {
-            const Icon = PAGE_ICONS[i];
-            return (
-              <button
-                key={page}
-                onClick={() => navigateTo(i)}
-                className="flex items-center gap-1.5 font-mono text-[9px] tracking-widest transition-colors"
-                style={{ color: active === i ? "var(--primary)" : "var(--muted-foreground)" }}
-              >
-                {active === i && (
-                  <span style={{ color: "var(--primary)", fontSize: 8 }}>▸</span>
-                )}
-                {page}
-              </button>
-            );
-          })}
+          {PAGE_CONFIG.map((page, i) => (
+            <button
+              key={page.id}
+              onClick={() => navigateTo(i)}
+              className="flex items-center gap-1.5 font-mono text-[9px] tracking-widest transition-colors"
+              style={{ color: active === i ? "var(--primary)" : "var(--muted-foreground)" }}
+            >
+              {active === i && (
+                <span style={{ color: "var(--primary)", fontSize: 8 }}>▸</span>
+              )}
+              {page.label}
+            </button>
+          ))}
         </div>
 
         <div className="font-mono text-[9px] tabular-nums" style={{ color: "var(--muted-foreground)" }}>
           <span style={{ color: "var(--primary)" }}>{String(active + 1).padStart(2, "0")}</span>
-          {" / 06"}
+          {` / ${String(PAGE_CONFIG.length).padStart(2, "0")}`}
         </div>
       </nav>
 
@@ -853,12 +721,19 @@ export default function App() {
           msOverflowStyle: "none",
         }}
       >
-        <HomeSection onNavigate={navigateTo} />
-        <BlogSection onCardClick={navigate} />
-        <GamesSection onCardClick={navigate} />
-        <ToolsSection onCardClick={navigate} />
-        <MusicSection onCardClick={navigate} />
-        <ShopSection onCardClick={navigate} />
+        {PAGE_CONFIG.map((page, i) => {
+          const Template = page.template !== null ? PAGE_TEMPLATES[page.template] : null;
+          return (
+            <SectionShell key={page.id} index={i} total={PAGE_CONFIG.length}>
+              {Template
+                ? <Template label={page.label} icon={page.icon} onNavigate={navigateTo}>
+                    <page.component onNavigate={navigateTo} onCardClick={navigate} />
+                  </Template>
+                : <page.component onNavigate={navigateTo} onCardClick={navigate} />
+              }
+            </SectionShell>
+          );
+        })}
       </div>
 
       {/* Hide WebKit scrollbar */}
