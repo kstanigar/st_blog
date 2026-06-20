@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePostHog } from "@posthog/react";
+import { AuthProvider, useAuthContext } from "../context/AuthContext";
+import { AuthModal } from "./AuthModal";
 import {
   Zap,
   ChevronRight,
@@ -641,11 +643,13 @@ function ShopSection({ onCardClick, onNavigate: _onNavigate }: { onCardClick: (p
 
 // ─── Root App ──────────────────────────────────────────────────────────────
 
-export default function App() {
+function AppContent() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+  const [authOpen, setAuthOpen] = useState(false);
   const navigate = useNavigate();
   const posthog = usePostHog();
+  const { user, signOut } = useAuthContext();
 
   useEffect(() => {
     const from = sessionStorage.getItem("returnToSection");
@@ -728,9 +732,32 @@ export default function App() {
           ))}
         </div>
 
-        <div className="font-mono text-[9px] tabular-nums" style={{ color: "var(--muted-foreground)" }}>
-          <span style={{ color: "var(--primary)" }}>{String(active + 1).padStart(2, "0")}</span>
-          {` / ${String(PAGE_CONFIG.length).padStart(2, "0")}`}
+        <div className="flex items-center gap-4">
+          <div className="font-mono text-[9px] tabular-nums" style={{ color: "var(--muted-foreground)" }}>
+            <span style={{ color: "var(--primary)" }}>{String(active + 1).padStart(2, "0")}</span>
+            {` / ${String(PAGE_CONFIG.length).padStart(2, "0")}`}
+          </div>
+          {user ? (
+            <button
+              onClick={signOut}
+              className="font-mono text-[9px] tracking-widest transition-colors"
+              style={{ color: "var(--muted-foreground)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--primary)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted-foreground)")}
+            >
+              [{user.email?.split("@")[0]}] ×
+            </button>
+          ) : (
+            <button
+              onClick={() => setAuthOpen(true)}
+              className="font-mono text-[9px] tracking-widest border px-3 py-1 transition-colors"
+              style={{ color: "var(--primary)", borderColor: "var(--primary-glow-border)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--primary-glow-xs)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              LOGIN
+            </button>
+          )}
         </div>
       </nav>
 
@@ -764,6 +791,16 @@ export default function App() {
       <style>{`
         div::-webkit-scrollbar { display: none; }
       `}</style>
+
+      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
