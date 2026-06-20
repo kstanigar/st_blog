@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { usePostHog } from "@posthog/react";
 import {
   Zap,
   ChevronRight,
@@ -9,7 +10,6 @@ import {
   ShoppingBag,
   ArrowRight,
   Cpu,
-  Terminal,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { slug } from "../lib/utils";
@@ -310,7 +310,7 @@ function SectionShell({ children, index, total }: { children: React.ReactNode; i
   return (
     <div
       className="relative flex-shrink-0 overflow-hidden"
-      style={{ width: "100vw", height: "100vh", scrollSnapAlign: "start" }}
+      style={{ width: "100vw", height: "100vh", scrollSnapAlign: "start", scrollSnapStop: "always" }}
     >
       {children}
       <div
@@ -645,6 +645,15 @@ export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const navigate = useNavigate();
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    const from = sessionStorage.getItem("returnToSection");
+    if (from !== null) {
+      sessionStorage.removeItem("returnToSection");
+      containerRef.current?.scrollTo({ left: parseInt(from, 10) * window.innerWidth, behavior: "instant" });
+    }
+  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -657,10 +666,24 @@ export default function App() {
   }, []);
 
   const navigateTo = (i: number) => {
+    posthog?.capture("section navigated", {
+      section: PAGE_CONFIG[i]?.id,
+      section_label: PAGE_CONFIG[i]?.label,
+      from_section: PAGE_CONFIG[active]?.id,
+    });
     containerRef.current?.scrollTo({
       left: i * window.innerWidth,
       behavior: "smooth",
     });
+  };
+
+  const handleCardClick = (path: string, sectionIndex: number) => {
+    posthog?.capture("card clicked", {
+      section: PAGE_CONFIG[sectionIndex]?.id,
+      path,
+    });
+    sessionStorage.setItem("returnToSection", String(sectionIndex));
+    navigate(path);
   };
 
   return (
@@ -717,6 +740,7 @@ export default function App() {
         className="w-full h-full flex overflow-x-scroll overflow-y-hidden"
         style={{
           scrollSnapType: "x mandatory",
+          scrollSnapStop: "always",
           scrollbarWidth: "none",
           msOverflowStyle: "none",
         }}
@@ -727,9 +751,9 @@ export default function App() {
             <SectionShell key={page.id} index={i} total={PAGE_CONFIG.length}>
               {Template
                 ? <Template label={page.label} icon={page.icon} onNavigate={navigateTo}>
-                    <page.component onNavigate={navigateTo} onCardClick={navigate} />
+                    <page.component onNavigate={navigateTo} onCardClick={(path) => handleCardClick(path, i)} />
                   </Template>
-                : <page.component onNavigate={navigateTo} onCardClick={navigate} />
+                : <page.component onNavigate={navigateTo} onCardClick={(path) => handleCardClick(path, i)} />
               }
             </SectionShell>
           );

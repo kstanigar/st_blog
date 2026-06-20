@@ -2,6 +2,7 @@ import { useLocation } from "react-router";
 import { ShoppingBag } from "lucide-react";
 import { AccordionPage } from "../components/AccordionPage";
 import { slug } from "../lib/utils";
+import { usePostHog } from "@posthog/react";
 
 const PRODUCTS = [
   {
@@ -33,6 +34,19 @@ const PRODUCTS = [
 export default function ShopPage() {
   const { hash } = useLocation();
   const defaultOpen = hash.slice(1) || undefined;
+  const posthog = usePostHog();
+
+  const handleProductViewed = (productId: string) => {
+    const product = PRODUCTS.find((p) => slug(p.name) === productId);
+    if (product) {
+      posthog?.capture("product viewed", {
+        product_id: productId,
+        product_name: product.name,
+        product_price: product.price,
+        product_tag: product.tag,
+      });
+    }
+  };
 
   const items = PRODUCTS.map((p, i) => ({
     id: slug(p.name),
@@ -49,5 +63,14 @@ export default function ShopPage() {
     ),
   }));
 
-  return <AccordionPage title="SHOP" icon={ShoppingBag} items={items} defaultOpen={defaultOpen} />;
+  return (
+    <AccordionPage
+      title="SHOP"
+      icon={ShoppingBag}
+      items={items}
+      defaultOpen={defaultOpen}
+      page="shop"
+      onItemOpen={handleProductViewed}
+    />
+  );
 }

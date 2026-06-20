@@ -21,7 +21,7 @@
 ---
 
 ### 2026-06-16 — Auth & Payments System
-**Status:** 🔲 Planned — NEXT UP
+**Status:** 🔲 Planned — after Analytics
 **Plan file:** `auth_payments_plan.md`
 
 - [ ] Session 4A — Supabase setup + DB schema + auth modal
@@ -46,6 +46,19 @@
 ---
 
 ## Completed Priorities
+
+### 2026-06-19 — PostHog Analytics
+**Status:** ✅ Session A complete — B/C/D embedded in future sessions
+**Plan file:** `posthog_analytics_plan.md`
+
+- [x] Session A: Install, init in `main.tsx`, all events wired, build verified, events confirmed in PostHog dashboard
+- [ ] Session B: `identify()` wired to Supabase auth (during Auth session 4A)
+- [ ] Session C: `skin selected` event (during FloatingPalette)
+- [ ] Session D: `purchase initiated` + `purchase completed` (during Stripe session 4B)
+- No cookie banner needed — uses `localStorage` persistence, not cookies
+- Events: `section navigated`, `card clicked`, `accordion expanded`, `product viewed`, `back to home clicked`
+
+---
 
 ### 2026-06-15 — Theme Modularization & Circuit Responsive Fix
 **Status:** ✅ Complete — Session 3

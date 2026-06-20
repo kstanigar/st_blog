@@ -1,4 +1,5 @@
 import * as Accordion from "@radix-ui/react-accordion";
+import { usePostHog } from "@posthog/react";
 
 export type AccordionItemData = {
   id: string;
@@ -10,15 +11,34 @@ export type AccordionItemData = {
 export function SiteAccordion({
   items,
   defaultOpen,
+  page,
+  onItemOpen,
 }: {
   items: AccordionItemData[];
   defaultOpen?: string;
+  page?: string;
+  onItemOpen?: (itemId: string) => void;
 }) {
+  const posthog = usePostHog();
+
+  const handleValueChange = (value: string) => {
+    if (value) {
+      const item = items.find((it) => it.id === value);
+      posthog?.capture("accordion expanded", {
+        item_id: value,
+        item_label: item?.label,
+        page,
+      });
+      onItemOpen?.(value);
+    }
+  };
+
   return (
     <Accordion.Root
       type="single"
       collapsible
       defaultValue={defaultOpen}
+      onValueChange={handleValueChange}
       className="w-full max-w-3xl"
     >
       {items.map((item) => (

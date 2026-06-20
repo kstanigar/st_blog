@@ -1,14 +1,16 @@
 {
+  "permissions": {
+    "allow": ["WebFetch", "WebSearch", "Edit", "Write", "Bash"]
+  },
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
-            "type": "agent",
-            "model": "claude-haiku-4-5-20251001",
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/load-session-context.sh",
             "statusMessage": "Loading project context...",
-            "timeout": 60,
-            "prompt": "Read the file /Users/ks2026/Documents/Projects/2026/st_blog/handoff_summary.md and extract only the first 8 session entries (newest at top). Then read /Users/ks2026/Documents/Projects/2026/st_blog/priorities.md and extract only the content under '## Current Priorities' (stop before '## Completed Priorities'). Return a brief context block with both: the 8 handoff entries for project history and the current priorities for what is next this session."
+            "timeout": 60
           }
         ]
       }
