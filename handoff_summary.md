@@ -3,6 +3,58 @@
 
 ---
 
+## 2026-06-20 — Session 13: Auth & Payments — Session 4B ✅
+
+**Completed this session:**
+- Phase 4 — `src/lib/purchases.ts` + `src/hooks/usePurchases.ts` — fetches owned product IDs as a Set; re-fetches after Stripe redirect (`?success=true`)
+- Phase 5 — `@stripe/stripe-js` installed; 8 products created in Stripe dashboard (6 skins @ $2.99, color_wheel @ $7.99, rainbow_cycle @ $9.99); all price IDs wired into `src/lib/stripe.ts`; `VITE_STRIPE_PUBLISHABLE_KEY` added to `.env.local`; Stripe account renamed from Raginats → Standing Tiger
+- Phase 6 — `supabase/functions/create-checkout-session/index.ts` + `supabase/functions/stripe-webhook/index.ts` created; `supabase/config.toml` created (`verify_jwt = false` for webhook); webhook registered in Stripe Workbench (`checkout.session.completed`); `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` added to Supabase Edge Function secrets; `SUPABASE_SERVICE_ROLE_KEY` confirmed auto-injected by runtime (no manual secret needed)
+
+**Key decisions:**
+- Live keys used (`pk_live_`, `sk_live_`) — real payments from the start; switch to test keys anytime for development
+- `SUPABASE_SERVICE_ROLE_KEY` and `SUPABASE_URL` are built-in Supabase Edge Function env vars — cannot and need not be added as custom secrets (prefix `SUPABASE_` is reserved)
+- Idempotency key: `crypto.randomUUID()` per checkout session request
+- `stripe_session_id` unique constraint in DB prevents duplicate purchase inserts on webhook retry
+
+**Next:**
+- Session 4C: Deploy Edge Functions (`supabase functions deploy`), FloatingPalette UI wired to purchases, AWS Amplify deploy
+
+---
+
+## 2026-06-20 — Session 12: Auth & Payments — Session 4A ✅
+
+**Completed this session:**
+- Reviewed `auth_payments_plan.md` against 2026 best practices (haiku agent) — 6 corrections applied:
+  - PKCE scope: email/password uses implicit flow; PKCE for OAuth only
+  - Removed `@supabase/ssr` — wrong package for a Vite SPA
+  - Idempotency key: replaced `${user_id}_${product_id}` with `crypto.randomUUID()` per request
+  - RLS insert block: replaced `WITH CHECK (false)` with no INSERT policy (cleaner pattern)
+  - Amplify pnpm: added `npm install -g pnpm` pre-build step to `amplify.yml`
+  - Stripe Checkout: noted embedded Payment Element as alternative (decision pending)
+- Phase 1 — Supabase dashboard: project created (West US Oregon), Email/Password auth on by default, Google OAuth deferred
+- `.env.local` updated: `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` (sb_publishable_ key)
+- Phase 2 — Database schema: `supabase/migrations/001_purchases.sql` created and pushed via `supabase db push`
+  - `purchases` table: id, user_id, product_id, stripe_session_id (unique), purchased_at
+  - RLS enabled: select policy `auth.uid() = user_id`; no INSERT policy (service role only)
+- Fixed `.env.local` parse error: bare `Supabase` label → `# Supabase` comment
+- Fixed project ref typo: `jcdnmmf...` → `jcdmmmf...` (one char off, found via `supabase projects list`)
+
+**Also completed this session:**
+- Phase 3 — Frontend Auth: `@supabase/supabase-js` + supabase.ts + useAuth hook + AuthContext + AuthModal
+  - LOGIN button in nav — shows username + sign out when logged in
+  - PostHog Session B wired: `identify()` on login/signup, `reset()` on logout, captures `user logged in`, `user signed up`, `user logged out`
+
+**Key decisions:**
+- New Supabase key naming: `sb_publishable_` = anon/public key; `sb_secret_` = service role — both coexist with legacy naming
+- Supabase CLI installed as dev dependency (`pnpm add -D supabase`)
+- Google OAuth deferred — Email/Password sufficient to start; add OAuth as a separate step later
+- Stripe Checkout UX (hosted redirect vs embedded) — decision still pending
+
+**Next:**
+- Session 4B: Stripe products + Checkout session Edge Function + stripe-webhook Edge Function + usePurchases hook
+
+---
+
 ## 2026-06-19 — Session 11: PostHog Analytics Session A ✅
 
 **Completed:**
@@ -21,8 +73,8 @@
 
 **Verified:** Events confirmed live in PostHog Activity feed — `section navigated`, `card clicked`, `$Pageview` all firing from `localhost:5173`.
 
-**Remaining (Session B/C/D — embedded in future work):**
-- Session B: `posthog.identify()` + `posthog.reset()` during Auth (Session 4A)
+**Remaining (Session C/D — embedded in future work):**
+- Session B: `posthog.identify()` + `posthog.reset()` ✅ Done — wired in Session 12 (useAuth.ts)
 - Session C: `skin selected` event during FloatingPalette
 - Session D: `purchase initiated` + `purchase completed` during Stripe
 

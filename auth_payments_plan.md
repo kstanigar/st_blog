@@ -36,23 +36,26 @@ React queries purchases on login → unlocks skins client-side
 
 ## Research Findings (2026 Best Practices)
 
+> Verified 2026-06-20 via haiku agent research against current Supabase, Stripe, and AWS docs.
+
 ### Supabase Auth
-- SDK: `@supabase/supabase-js` v2 (v2.108.1 current — no v3 yet)
-- Auth flow: **OAuth 2.1 with PKCE** for SPAs — required for public clients (no client secret in browser)
-- Email/password: also supports PKCE flow
+- SDK: `@supabase/supabase-js` v2 (v2.108.2 current as of June 2026 — no v3)
+- Auth flow: **PKCE for OAuth flows only** — required for OAuth public clients (no client secret in browser). Email/password uses the default implicit flow — PKCE is unnecessary overhead for email/password in a client-only SPA
+- **Do not install `@supabase/ssr`** — that package is for SSR frameworks (Next.js, SvelteKit). A Vite React SPA uses `@supabase/supabase-js` only
 - Refresh token rotation: enabled by default, 10-second reuse interval prevents replay attacks
 - **Never** use the service role key client-side — anon key only (RLS enforces access control)
 - `VITE_*` env vars are embedded at build time — safe for anon key, never for service role key
 
 ### Stripe Payments
-- Stripe Checkout (hosted page) is the recommended approach for one-time purchases
-- Handles 100+ payment methods, PCI compliance, mobile-optimized — no custom UI needed
-- SDKs: `@stripe/stripe-js` (browser) + `stripe` (Node/Deno server-side)
-- Idempotency keys: generate client-side, Stripe caches responses 24 hours — prevents duplicate charges
+- **Two options (decision pending):**
+  - **Hosted Checkout (redirect)** — simpler, redirect to Stripe-managed page and back. Still fully supported. Less code, no custom UI
+  - **Embedded Payment Element** (`@stripe/react-stripe-js` + Checkout Sessions API) — stays on-site in a Stripe-managed iframe, 18+ payment methods auto-enabled, Adaptive Pricing. Stripe's current recommended path for SPAs
+- SDKs: `@stripe/stripe-js` + `@stripe/react-stripe-js` (browser) + `stripe` (Node/Deno server-side)
+- Idempotency keys: **use `crypto.randomUUID()` per request** — never encode user_id in the key (Stripe anti-pattern: blocks legitimate repeat purchases + exposes PII). Attach `user_id` and `product_id` in Stripe `metadata` instead
 
 ### Stripe Webhooks → Supabase Edge Functions
-- Supabase Edge Functions run on Deno Deploy — 0–5ms cold starts, ideal for webhooks
-- Must pass **raw request body** (not JSON-parsed) to `stripe.webhooks.constructEvent()` for signature verification
+- Supabase Edge Functions run on Deno (Rust-based Supabase Edge Runtime, Deno-compatible) — 0–5ms cold starts, ideal for webhooks
+- Must pass **raw request body** (not JSON-parsed) to `stripe.webhooks.constructEvent()` for signature verification — current Stripe API version `2026-05-27.preview`, requirement unchanged
 - Disable JWT verification on the webhook endpoint in `config.toml` (it's a public endpoint Stripe calls)
 - Signature verification uses HMAC with 5-minute timestamp tolerance — rejects replayed events
 - Return `200` immediately; queue heavy work asynchronously
@@ -62,9 +65,11 @@ React queries purchases on login → unlocks skins client-side
 - Anon key client-side + RLS = safe to query purchases table directly from browser
 - Service role key (bypasses RLS) only used inside Edge Functions, never exposed to browser
 - Policy: `auth.uid() = user_id` on purchases table
+- **INSERT blocking:** omit the INSERT policy entirely (no grant) rather than `WITH CHECK (false)` — more idiomatic and clearer in the Supabase dashboard UI
 
 ### AWS Deployment
-- **AWS Amplify**: recommended for simplicity — auto SPA routing, integrated CI/CD, auto SSL, comparable cost to S3+CloudFront at low traffic
+- **AWS Amplify Gen 2** (CDK-based): current recommended approach — auto SPA routing, integrated CI/CD, auto SSL
+- **pnpm gotcha:** pnpm is not pre-installed in Amplify's build environment. Must add `npm install -g pnpm` as a pre-build step in `amplify.yml`, or switch CI build command to `npm run build`
 - **S3 + CloudFront**: better for full control, custom cache rules, CSP headers
 - Vite auto-fingerprints assets (cache busting built-in) — set HTML TTL ≤ 1 day
 - Configure 404 → index.html for SPA client-side routing
@@ -133,10 +138,8 @@ supabase/
     on purchases for select
     using (auth.uid() = user_id);
 
-  -- Only service role (Edge Function) can insert — no client-side inserts
-  create policy "service role inserts"
-    on purchases for insert
-    with check (false); -- blocked for anon/authed clients; Edge Function uses service role
+  -- No INSERT policy defined — only the service role (Edge Function) can insert.
+  -- Omitting the policy is cleaner than WITH CHECK (false) and clearer in Supabase dashboard.
   ```
 - [ ] Run migration via Supabase CLI: `supabase db push`
 
@@ -192,7 +195,7 @@ supabase/
 - [ ] Add `createCheckoutSession` Edge Function (or API route) that creates a Stripe Checkout session
   - Passes `metadata: { user_id, product_id }` so webhook knows who bought what
   - Sets `success_url` and `cancel_url` back to the site
-  - Uses idempotency key: `${user_id}_${product_id}` to prevent duplicate sessions
+  - Uses idempotency key: `crypto.randomUUID()` per request — never encode user_id in key (blocks repeat purchases + exposes PII)
 
 ### Phase 6 — Stripe Webhook Edge Function
 - [ ] Create `supabase/functions/stripe-webhook/index.ts`
@@ -221,10 +224,29 @@ supabase/
 - [ ] Master toggle: switches `--primary` between chosen skin and default `#00d4ff` (cyan)
 
 ### Phase 8 — AWS Deployment
-- [ ] **Option A: AWS Amplify** (recommended for lower lift)
+- [ ] **Option A: AWS Amplify Gen 2** (recommended for lower lift)
   - Connect GitHub repo in Amplify console
   - Set env vars in Amplify console (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_STRIPE_PUBLISHABLE_KEY)
-  - Add `amplify.yml` build config (pnpm + vite build)
+  - Add `amplify.yml` build config — must install pnpm first (not pre-installed in Amplify environment):
+    ```yaml
+    version: 1
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm install -g pnpm
+            - pnpm install
+        build:
+          commands:
+            - pnpm run build
+      artifacts:
+        baseDirectory: dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+    ```
   - Configure SPA rewrite: all 404s → `/index.html`
 - [ ] **Option B: S3 + CloudFront** (more control)
   - S3 bucket (static website hosting disabled — use CloudFront OAC)
@@ -283,4 +305,4 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...        # bypasses RLS — treat like a password
 
 ---
 
-*Last updated: 2026-06-16*
+*Last updated: 2026-06-20 — verified against 2026 best practices (Supabase v2.108.2, Stripe API 2026-05-27, Amplify Gen 2)*

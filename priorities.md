@@ -20,15 +20,21 @@
 
 ---
 
-### 2026-06-16 — Auth & Payments System
-**Status:** 🔲 Planned — after Analytics
+### 2026-06-20 — Auth & Payments System
+**Status:** 🟡 In Progress — Session 4B underway
 **Plan file:** `auth_payments_plan.md`
 
-- [ ] Session 4A — Supabase setup + DB schema + auth modal
-- [ ] Session 4B — Stripe products + Checkout + webhook Edge Function
+- [x] Session 4A — Supabase setup + DB schema + auth modal
+  - [x] Phase 1: Supabase project created, Email auth enabled, API keys in `.env.local`
+  - [x] Phase 2: `purchases` table + RLS migration pushed via Supabase CLI
+  - [x] Phase 3: `@supabase/supabase-js` + supabase.ts + useAuth + AuthContext + AuthModal
+- [x] Session 4B — Stripe products + Checkout + webhook Edge Function
+  - [x] Phase 4: `purchases.ts` + `usePurchases.ts`
+  - [x] Phase 5: 8 Stripe products created, price IDs wired, `stripe.ts`, `VITE_STRIPE_PUBLISHABLE_KEY` in `.env.local`
+  - [x] Phase 6: `create-checkout-session` + `stripe-webhook` Edge Functions, `config.toml`, webhook registered, secrets added
 - [ ] Session 4C — FloatingPalette wired to purchases + AWS Amplify deploy
 
-**Stack:** Supabase (PKCE auth + PostgreSQL + Edge Functions) + Stripe Checkout + AWS Amplify
+**Stack:** Supabase (email/password auth + PostgreSQL + Edge Functions) + Stripe Checkout + AWS Amplify
 
 ---
 
@@ -52,7 +58,7 @@
 **Plan file:** `posthog_analytics_plan.md`
 
 - [x] Session A: Install, init in `main.tsx`, all events wired, build verified, events confirmed in PostHog dashboard
-- [ ] Session B: `identify()` wired to Supabase auth (during Auth session 4A)
+- [x] Session B: `identify()` wired to Supabase auth (during Auth session 4A)
 - [ ] Session C: `skin selected` event (during FloatingPalette)
 - [ ] Session D: `purchase initiated` + `purchase completed` (during Stripe session 4B)
 - No cookie banner needed — uses `localStorage` persistence, not cookies
