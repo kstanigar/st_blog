@@ -17,6 +17,7 @@ import { useNavigate } from "react-router";
 import { slug } from "../lib/utils";
 import { GridOverlay } from "../components/GridOverlay";
 import { PAGE_TEMPLATES } from "./templates";
+import { FloatingPalette } from "./FloatingPalette";
 
 // ─── Page config ───────────────────────────────────────────────────────────
 type PageConfig = {
@@ -70,20 +71,20 @@ function buildCircuitPath(waypoints: [number, number][]): string {
 }
 
 // ─── Matrix rain background ────────────────────────────────────────────────
-function MatrixBackground() {
+function MatrixBackground({ primaryColor = "#00d4ff" }: { primaryColor?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Ref keeps latest color available to the draw loop without restarting the effect
+  const colorRef = useRef(primaryColor);
+
+  useEffect(() => {
+    colorRef.current = primaryColor;
+  }, [primaryColor]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
-    // Canvas can't read CSS vars mid-loop — pull --primary once on mount.
-    // Task Group 4 (FloatingPalette) will upgrade this to re-read on skin change.
-    const primary = getComputedStyle(document.documentElement)
-      .getPropertyValue("--primary")
-      .trim() || "#00d4ff";
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -109,11 +110,10 @@ function MatrixBackground() {
         const y = drops[i] * CELL;
         const char = chars[Math.floor(Math.random() * chars.length)];
         const bright = drops[i] < 2;
-        // Bright head chars use full primary; dim trailing chars fade to near-transparent
-        ctx.fillStyle = bright
-          ? primary
-          : `rgba(0, 212, 255, ${Math.random() * 0.18 + 0.04})`;
+        ctx.fillStyle = colorRef.current;
+        ctx.globalAlpha = bright ? 1 : Math.random() * 0.18 + 0.04;
         ctx.fillText(char, i * CELL, y);
+        ctx.globalAlpha = 1;
 
         if (y > canvas.height && Math.random() > 0.97) drops[i] = 0;
         drops[i]++;
@@ -647,6 +647,7 @@ function AppContent() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [authOpen, setAuthOpen] = useState(false);
+  const [primaryColor, setPrimaryColor] = useState("#00d4ff");
   const navigate = useNavigate();
   const posthog = usePostHog();
   const { user, signOut } = useAuthContext();
@@ -693,10 +694,23 @@ function AppContent() {
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-background">
       {/* Matrix rain always behind everything */}
-      <MatrixBackground />
+      <MatrixBackground primaryColor={primaryColor} />
 
       {/* Circuit SVG animation */}
       <CircuitOverlay containerRef={containerRef} />
+
+      {/* Color skin selector */}
+      <FloatingPalette
+        onColorChange={(hue) => {
+          // Resolve oklch to rgb via temp element — canvas fillStyle can't read CSS vars
+          const tmp = document.createElement("div");
+          tmp.style.color = `oklch(0.7 0.22 ${hue})`;
+          document.body.appendChild(tmp);
+          const resolved = getComputedStyle(tmp).color;
+          document.body.removeChild(tmp);
+          setPrimaryColor(resolved);
+        }}
+      />
 
       {/* Fixed navigation */}
       <nav

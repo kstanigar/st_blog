@@ -247,6 +247,55 @@ const [primaryColor, setPrimaryColor] = useState("#00d4ff");
 
 ---
 
+## Mobile Responsiveness
+
+| Issue | Fix |
+|---|---|
+| Swatch buttons 18×18px (too small to tap) | Wrap each swatch in `min-w-[44px] min-h-[44px]` flex centering — visual size unchanged, hit area meets 44px guideline |
+| `[COLOR]` button ~28px tall | Add `py-2.5` to reach 44px tap target |
+| Panel can overflow off top of screen on short phones | Add `max-h-[70vh] overflow-y-auto` to panel container |
+| Panel clips right edge on 375px screens | Add `max-w-[calc(100vw-2rem)]` to panel container |
+| Panel position on mobile | Keep `bottom: 16, right: 16` on mobile via Tailwind `sm:bottom-6 sm:right-6` |
+
+**Updated panel container classes:**
+```tsx
+<div
+  className="absolute bottom-10 right-0 border p-4 flex flex-col gap-4 max-h-[70vh] overflow-y-auto max-w-[calc(100vw-2rem)]"
+  style={{ background: "var(--background)", borderColor: "var(--primary-glow-sm)", minWidth: 200 }}
+>
+```
+
+**Updated swatch button (touch target wrapper):**
+```tsx
+<button
+  key={skin.id}
+  onClick={() => selectSkin(skin)}
+  className="flex flex-col items-center justify-center gap-1 min-w-[44px] min-h-[44px]"
+  title={skin.free ? skin.label : `${skin.label} — $2.99`}
+>
+  <div style={{ width: 18, height: 18, ... }} />
+  <span ...>{skin.free ? skin.label : "LOCKED"}</span>
+</button>
+```
+
+**Updated `[COLOR]` button:**
+```tsx
+<button
+  onClick={() => setOpen(o => !o)}
+  className="font-mono text-[9px] tracking-widest border px-3 py-2.5"
+  style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
+>
+  [COLOR]
+</button>
+```
+
+**Updated outer container positioning:**
+```tsx
+<div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6" style={{ zIndex: 30 }}>
+```
+
+---
+
 ## Files Affected
 
 - `src/app/FloatingPalette.tsx` — new file, ~100 lines
@@ -257,6 +306,7 @@ const [primaryColor, setPrimaryColor] = useState("#00d4ff");
 ## Task List
 
 - [ ] Create `src/app/FloatingPalette.tsx` — full component with SKINS config, applyHue, master toggle
+- [ ] Apply mobile fixes: `[COLOR]` button `py-2.5`, swatch `min-w-[44px] min-h-[44px]` wrappers, panel `max-h-[70vh] overflow-y-auto max-w-[calc(100vw-2rem)]`, outer container `bottom-4 right-4 sm:bottom-6 sm:right-6`
 - [ ] Edit `src/app/App.tsx` — update MatrixBackground to accept `primaryColor` prop
 - [ ] Edit `src/app/App.tsx` — add `primaryColor` state + `onColorChange` handler
 - [ ] Edit `src/app/App.tsx` — render `<FloatingPalette>` after `<CircuitOverlay />`

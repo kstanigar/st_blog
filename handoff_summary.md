@@ -3,6 +3,29 @@
 
 ---
 
+## 2026-06-20 — Session 14: Auth & Payments — Session 4C ✅
+
+**Completed this session:**
+- Installed Supabase CLI (`brew install supabase/tap/supabase` → v2.107.0), logged in, linked project `jcdmmmfyrrdpxymdlpnj`
+- Deployed `create-checkout-session` Edge Function — confirmed live in Supabase dashboard (1 deployment)
+- Deployed `stripe-webhook` Edge Function — confirmed live in Supabase dashboard (1 deployment)
+- Created `src/app/FloatingPalette.tsx` — 7 named skins, hue slider, rainbow row, master toggle, localStorage persistence (`st_skin`)
+- `VITE_DEV_PALETTE=true` env var unlocks all features locally; production keeps purchase gating
+- `MatrixBackground` updated to accept `primaryColor` prop via `colorRef` — canvas syncs on skin change without resetting drops
+- Updated `task_group4_floating_palette_plan.md` with mobile responsiveness section (44px touch targets, panel max-h, responsive positioning)
+
+**Key decisions:**
+- `DEV_PALETTE` flag read at module scope from `import.meta.env` — tree-shaken out in prod builds
+- Canvas color sync via `colorRef` (not effect deps) — avoids resetting the drops array on every skin change
+- `oklch(0.7 0.22 ${hue})` → resolved to `rgb(...)` via temp DOM element before passing to canvas `fillStyle`
+
+**Next:**
+- AWS Amplify deploy
+- Session 4C (wiring): wire `usePurchases()` into FloatingPalette to gate paid skins/slider/rainbow
+- PostHog `skin selected` event (Analytics Session C)
+
+---
+
 ## 2026-06-20 — Session 13: Auth & Payments — Session 4B ✅
 
 **Completed this session:**
@@ -15,9 +38,6 @@
 - `SUPABASE_SERVICE_ROLE_KEY` and `SUPABASE_URL` are built-in Supabase Edge Function env vars — cannot and need not be added as custom secrets (prefix `SUPABASE_` is reserved)
 - Idempotency key: `crypto.randomUUID()` per checkout session request
 - `stripe_session_id` unique constraint in DB prevents duplicate purchase inserts on webhook retry
-
-**Next:**
-- Session 4C: Deploy Edge Functions (`supabase functions deploy`), FloatingPalette UI wired to purchases, AWS Amplify deploy
 
 ---
 
