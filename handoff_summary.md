@@ -3,6 +3,56 @@
 
 ---
 
+## 2026-06-19 — Session 11: PostHog Analytics Session A ✅
+
+**Completed:**
+- PostHog wizard ran — installed `posthog-js` + `@posthog/react`, wired `PostHogProvider` + `PostHogErrorBoundary` in `main.tsx`
+- Fixed 3 wizard gaps: `.env` → `.env.local`, event names standardised to spaces, `core-js: false` in `pnpm-workspace.yaml`
+- All 5 events wired: `section navigated`, `card clicked`, `accordion expanded`, `product viewed`, `back to home clicked`
+- `defaults: '2026-01-30'` handles SPA pageview tracking via history API — no manual `useEffect` needed
+- Production build verified clean (1641 modules, no errors)
+- PostHog MCP skipped — no data yet; install later when analytics data is flowing
+- WebFetch/WebSearch added to `.claude/settings.json` permissions — subagents can now research freely
+
+**Key decisions:**
+- `core-js: false` — build script not needed for polyfill use, carries supply-chain risk
+- Event naming: spaces not underscores — per PostHog `[object] [verb]` docs
+- `capture_pageview: false` NOT needed — `defaults: '2026-01-30'` auto-enables `history_change` mode
+
+**Verified:** Events confirmed live in PostHog Activity feed — `section navigated`, `card clicked`, `$Pageview` all firing from `localhost:5173`.
+
+**Remaining (Session B/C/D — embedded in future work):**
+- Session B: `posthog.identify()` + `posthog.reset()` during Auth (Session 4A)
+- Session C: `skin selected` event during FloatingPalette
+- Session D: `purchase initiated` + `purchase completed` during Stripe
+
+**Priority order (updated):**
+1. Auth & Payments — `auth_payments_plan.md` — NEXT UP (Session 4A: Supabase setup)
+2. Task Group 4 FloatingPalette — `task_group4_floating_palette_plan.md` — after Auth
+3. Wheel scroll — deferred, `wheel_scroll_fix_plan.md`
+
+---
+
+## 2026-06-19 — Session 10: Analytics Planning + Hook Fix
+
+**Completed:**
+- Fixed SessionStart hook error — changed `type: "agent"` to `type: "command"` in `.claude/settings.json`; created `.claude/hooks/load-session-context.sh` shell script
+- Planned PostHog analytics — created `posthog_analytics_plan.md` with full implementation plan
+- Updated priority order: Analytics now NEXT UP before Auth & Payments
+
+**Priority order (updated):**
+1. PostHog Analytics — `posthog_analytics_plan.md` — NEXT UP (Session A: init + events)
+2. Auth & Payments — `auth_payments_plan.md` — Session 4A after analytics
+3. Task Group 4 FloatingPalette — `task_group4_floating_palette_plan.md` — after Auth
+4. Wheel scroll — deferred, `wheel_scroll_fix_plan.md`
+
+**Key decisions:**
+- PostHog chosen over Plausible/GA4 — user-level tracking needed for purchase funnels
+- `localStorage` persistence (no cookies) — no GDPR cookie banner required
+- Analytics sessions B/C/D are embedded into Auth, FloatingPalette, and Stripe sessions respectively
+
+---
+
 ## 2026-06-19 — Session 9: Doc Cleanup + Priority Switch
 
 **Completed:**

@@ -1,16 +1,30 @@
 import { useNavigate } from "react-router";
 import { ChevronLeft } from "lucide-react";
 import { SiteAccordion, type AccordionItemData } from "./SiteAccordion";
+import { usePostHog } from "@posthog/react";
 
 type AccordionPageProps = {
   title: string;
   icon: React.ComponentType<{ size?: number }>;
   items: AccordionItemData[];
   defaultOpen?: string;
+  page?: string;
+  onItemOpen?: (itemId: string) => void;
 };
 
-export function AccordionPage({ title, icon: Icon, items, defaultOpen }: AccordionPageProps) {
+export function AccordionPage({ title, icon: Icon, items, defaultOpen, page, onItemOpen }: AccordionPageProps) {
   const navigate = useNavigate();
+  const posthog = usePostHog();
+
+  const handleBack = () => {
+    posthog?.capture("back to home clicked", { page: page ?? title.toLowerCase() });
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  };
+
   return (
     <div className="relative min-h-screen bg-background">
       <div
@@ -27,7 +41,7 @@ export function AccordionPage({ title, icon: Icon, items, defaultOpen }: Accordi
         style={{ borderBottom: "1px solid var(--primary-glow-border)", background: "var(--bg-nav)", backdropFilter: "blur(12px)" }}
       >
         <button
-          onClick={() => window.history.length > 1 ? navigate(-1) : navigate("/")}
+          onClick={handleBack}
           className="flex items-center gap-2 font-mono text-[9px] tracking-widest text-muted-foreground hover:text-primary transition-colors"
         >
           <ChevronLeft size={10} />
@@ -54,7 +68,7 @@ export function AccordionPage({ title, icon: Icon, items, defaultOpen }: Accordi
       </div>
 
       <div className="px-16 lg:px-24 pb-24">
-        <SiteAccordion items={items} defaultOpen={defaultOpen} />
+        <SiteAccordion items={items} defaultOpen={defaultOpen} page={page ?? title.toLowerCase()} onItemOpen={onItemOpen} />
       </div>
     </div>
   );
