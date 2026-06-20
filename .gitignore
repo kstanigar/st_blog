@@ -29,3 +29,6 @@ pnpm-debug.log*
 
 # Claude local settings (personal overrides)
 .claude/settings.local.json
+
+# Supabase CLI cache
+supabase/.temp/
