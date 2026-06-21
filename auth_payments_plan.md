@@ -223,38 +223,52 @@ supabase/
 - [ ] Add account button (top of palette modal): shows email if logged in, opens AuthModal if not
 - [ ] Master toggle: switches `--primary` between chosen skin and default `#00d4ff` (cyan)
 
-### Phase 8 — AWS Deployment
-- [ ] **Option A: AWS Amplify Gen 2** (recommended for lower lift)
-  - Connect GitHub repo in Amplify console
-  - Set env vars in Amplify console (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_STRIPE_PUBLISHABLE_KEY)
-  - Add `amplify.yml` build config — must install pnpm first (not pre-installed in Amplify environment):
-    ```yaml
-    version: 1
-    frontend:
-      phases:
-        preBuild:
-          commands:
-            - npm install -g pnpm
-            - pnpm install
-        build:
-          commands:
-            - pnpm run build
-      artifacts:
-        baseDirectory: dist
-        files:
-          - '**/*'
-      cache:
-        paths:
-          - node_modules/**/*
-    ```
-  - Configure SPA rewrite: all 404s → `/index.html`
-- [ ] **Option B: S3 + CloudFront** (more control)
-  - S3 bucket (static website hosting disabled — use CloudFront OAC)
-  - CloudFront distribution with custom error page 404 → /index.html
-  - Response headers policy: CSP, HSTS, X-Frame-Options
-  - GitHub Actions deploy workflow: `pnpm build` → `aws s3 sync dist/ s3://bucket`
-- [ ] Add `STRIPE_PUBLISHABLE_KEY` redirect domain to Stripe allowed origins
+### Phase 8 — Deployment Strategy (AWS Amplify — Both Environments)
+
+**Branch model:**
+- `dev` branch → Amplify staging URL — auto-deploys on push to `dev`
+- `main` branch → Amplify production URL — auto-deploys on merge from `dev`
+- `.github/workflows/build-check.yml` — PR build-check CI (no deploy, just `pnpm build` to catch broken builds before merge)
+
+**Workflow:** feature branches → PR into `dev` (build-check CI runs, then Amplify staging deploys) → PR into `main` (build-check CI runs, then Amplify prod deploys)
+
+**Environment variables — set in Amplify console per branch (not GitHub secrets):**
+- `dev` branch: test Supabase project + Stripe test keys (`pk_test_`, `sk_test_`)
+- `main` branch: live Supabase project + Stripe live keys (`pk_live_`, `sk_live_`)
+- Use Stripe test card `4242 4242 4242 4242` for staging purchases
+- 2026 recommendation: use Restricted API Keys in live mode (least-privilege)
+
+**Tasks:**
+- [ ] Connect `kstanigar/st_blog` to AWS Amplify Gen 2 in Amplify console
+- [ ] Add `dev` branch in Amplify — set staging env vars (test keys)
+- [ ] Add `main` branch in Amplify — set production env vars (live keys)
+- [ ] Add `amplify.yml` to repo root:
+  ```yaml
+  version: 1
+  frontend:
+    phases:
+      preBuild:
+        commands:
+          - nvm use 20
+          - npm install -g pnpm
+          - pnpm install
+      build:
+        commands:
+          - pnpm run build
+    artifacts:
+      baseDirectory: dist
+      files:
+        - '**/*'
+    cache:
+      paths:
+        - node_modules/**/*
+  ```
+- [ ] Add SPA rewrite rule in Amplify Console → Hosting → Rewrites & Redirects (apply to both branches):
+  - Source: `</^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|svg|txt|webp|woff|woff2)$)([^.]+$)/>`
+  - Target: `/index.html`
+  - Type: `200 (Rewrite)`
 - [ ] Add production domain to Supabase Auth allowed redirect URLs
+- [ ] Add production domain to Stripe allowed origins
 
 ### Phase 9 — Environment Variables Checklist
 ```

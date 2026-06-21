@@ -6,6 +6,12 @@
 
 ## Current Priorities
 
+### 2026-06-21 — Shared Card Component (Deferred Discussion)
+**Status:** 🔲 To revisit
+**Context:** Templates (`BlogTemplate`, `GamesTemplate`, etc.) are layout shells only — card hover styles (border, glow, bg tint) live in section components inside `App.tsx` and are NOT inherited by new pages using the templates. If more pages are added, consider extracting a shared `<Card />` component with standard hover/glow styles baked in so new pages don't have to hand-write card styles from scratch.
+
+---
+
 ### 2026-06-19 — Wheel Scroll Navigation
 **Status:** ⏸ Deferred — reverted, needs fresh approach
 **Plan file:** `wheel_scroll_fix_plan.md`
