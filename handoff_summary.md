@@ -3,6 +3,25 @@
 
 ---
 
+## 2026-06-21 — Session 18: Deploy Strategy + GitHub Pages Fix ✅
+
+**Completed this session:**
+- Investigated GitHub Pages black screen — root cause: `supabaseUrl is required` (env vars missing from build)
+- Switched deploy strategy from GitHub Pages + Amplify split → **AWS Amplify for both staging and prod**
+  - `dev` branch → Amplify staging (test Supabase project + Stripe test keys)
+  - `main` branch → Amplify production (live keys)
+- Created `.github/workflows/build-check.yml` — runs `pnpm build` on PRs to `dev` and `main`
+- Deleted `.github/workflows/deploy.yml` (GitHub Pages no longer used for deployment)
+- Created `amplify.yml` in repo root — pnpm + Node 20 + SPA artifact config
+- Updated `auth_payments_plan.md` Phase 8 with full Amplify setup task list + SPA rewrite rule
+- Added shared Card component discussion to `priorities.md` (deferred)
+
+**Files changed:** `.github/workflows/build-check.yml` (new), `.github/workflows/deploy.yml` (deleted), `amplify.yml` (new), `auth_payments_plan.md`, `priorities.md`
+
+**Next:** Connect repo to AWS Amplify console (set env vars per branch, add SPA rewrite rule), then Session 4C — wire `usePurchases()` into FloatingPalette
+
+---
+
 ## 2026-06-21 — Session 17: Nav Polish ✅
 
 **Completed this session:**
