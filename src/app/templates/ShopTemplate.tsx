@@ -17,7 +17,7 @@ export function ShopTemplate({ label, icon: Icon, children }: TemplateProps) {
         >
           {label}
         </h2>
-        <div className="flex gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl">
           {children}
         </div>
         <div className="mt-14 font-mono text-[9px] text-muted-foreground/25 tracking-[0.3em]">
