@@ -3,6 +3,55 @@
 
 ---
 
+## 2026-06-21 — Session 17: Nav Polish ✅
+
+**Completed this session:**
+- Mobile dropdown nav links → right-aligned (`justify-end`, `pr-8`, removed `text-left`)
+- Active `▸` indicator moved to right side of label (after text)
+- Hover underline added to both desktop and mobile nav links (`hover:underline hover:decoration-(--primary)`)
+
+**Files changed:** `src/app/App.tsx`
+
+**Next:** AWS Amplify deploy, wire `usePurchases()` into FloatingPalette, PostHog `skin selected` event
+
+---
+
+## 2026-06-21 — Session 16: Mobile Responsiveness ✅
+
+**Completed this session:**
+- Nav → hamburger menu below 768px (`md`) — hamburger sits right of LOGIN button, dropdown closes on nav item click
+- Page counter (`01 / 06`) hidden below 900px (`min-[900px]:block`)
+- Shop cards → responsive grid (`grid-cols-1 sm:grid-cols-2`), fixed `w-44`/`minWidth:176` removed
+- Games grid → `grid-cols-1 md:grid-cols-2` (was always 2 cols)
+- Analytics grid → `grid-cols-1 md:grid-cols-2` (was always 2 cols)
+- Left padding → `pl-8 md:pl-16 lg:pl-24` on all templates + HomeSection
+- Shop cards — removed `hover:bg-primary/5` background tint
+- Analytics cards — removed `hover:bg-primary/5` background tint, added `hover:border-primary/50` + neon box-shadow glow on hover
+- Plan documented in `mobile_responsiveness_plan.md`
+
+**Files changed:** `src/app/App.tsx`, `src/app/templates/ShopTemplate.tsx`, `src/app/templates/GamesTemplate.tsx`, `src/app/templates/AnalyticsTemplate.tsx`, `src/app/templates/BlogTemplate.tsx`, `src/app/templates/MusicTemplate.tsx`
+
+**Next:** AWS Amplify deploy, wire `usePurchases()` into FloatingPalette, PostHog `skin selected` event, git commit all session 15+16 changes
+
+---
+
+## 2026-06-20 — Session 15: Aesthetic Tweaks ✅
+
+**Completed this session:**
+- EMBER hue: 30 → 57 (warm yellow)
+- IVORY STATIC hue: 60 → 106 (yellow-green)
+- SOLAR FLARE hue: 50 → 342 (magenta/pink)
+- CYAN skin renamed to "COOL" (`id: "cyan"` unchanged — localStorage safe)
+- Nav link font size: `text-[9px]` → `text-[10.5px]` (+15%)
+- Nav link inactive color: `var(--muted-foreground)` → `var(--foreground)` (off-white `#b8cfe0`)
+- Active nav link stays `var(--primary)` (tracks chosen skin)
+
+**Files changed:** `src/app/FloatingPalette.tsx`, `src/app/App.tsx`
+
+**Next:** AWS Amplify deploy, wire `usePurchases()` into FloatingPalette, PostHog `skin selected` event
+
+---
+
 ## 2026-06-20 — Session 14: Auth & Payments — Session 4C ✅
 
 **Completed this session:**
