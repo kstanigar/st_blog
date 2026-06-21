@@ -27,18 +27,14 @@
 ---
 
 ### 2026-06-20 — Auth & Payments System
-**Status:** 🟡 In Progress — Session 4B underway
+**Status:** 🟡 In Progress — Session 4C remaining
 **Plan file:** `auth_payments_plan.md`
 
 - [x] Session 4A — Supabase setup + DB schema + auth modal
-  - [x] Phase 1: Supabase project created, Email auth enabled, API keys in `.env.local`
-  - [x] Phase 2: `purchases` table + RLS migration pushed via Supabase CLI
-  - [x] Phase 3: `@supabase/supabase-js` + supabase.ts + useAuth + AuthContext + AuthModal
 - [x] Session 4B — Stripe products + Checkout + webhook Edge Function
-  - [x] Phase 4: `purchases.ts` + `usePurchases.ts`
-  - [x] Phase 5: 8 Stripe products created, price IDs wired, `stripe.ts`, `VITE_STRIPE_PUBLISHABLE_KEY` in `.env.local`
-  - [x] Phase 6: `create-checkout-session` + `stripe-webhook` Edge Functions, `config.toml`, webhook registered, secrets added
-- [ ] Session 4C — FloatingPalette wired to purchases + AWS Amplify deploy
+- [x] Phase 8 — Deploy strategy: AWS Amplify for both `dev` (staging) and `main` (prod); `amplify.yml` added; `build-check.yml` CI added
+- [ ] Session 4C — Wire `usePurchases()` into FloatingPalette to gate paid skins/slider/rainbow
+- [ ] Amplify console setup — connect repo, set env vars per branch, add SPA rewrite rule
 
 **Stack:** Supabase (email/password auth + PostgreSQL + Edge Functions) + Stripe Checkout + AWS Amplify
 
@@ -121,13 +117,12 @@
 
 ---
 
-### 2026-06-15 — GitHub Pages Deployment Fix
-**Status:** ✅ Complete
+### 2026-06-15 — GitHub Pages Deployment (Superseded)
+**Status:** ✅ Replaced by AWS Amplify (Session 18)
 
-- Added `base: '/st_blog/'` to `vite.config.ts`
-- Created `.github/workflows/deploy.yml` (Node 22 + pnpm 11 + Vite build)
-- Removed GitHub's auto-generated `static.yml`
-- Site live at `kstanigar.github.io/st_blog/`
+- Originally deployed to `kstanigar.github.io/st_blog/` via `deploy.yml`
+- Replaced with AWS Amplify (both staging + prod) — `deploy.yml` deleted, `amplify.yml` added
+- `build-check.yml` retained as PR build-check CI
 
 ---
 
