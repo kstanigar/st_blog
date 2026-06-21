@@ -12,6 +12,8 @@ import {
   ShoppingBag,
   ArrowRight,
   Cpu,
+  Menu,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { slug } from "../lib/utils";
@@ -498,8 +500,10 @@ function ToolsSection({ onCardClick, onNavigate: _onNavigate }: { onCardClick: (
       {tools.map((t) => (
         <div
           key={t.name}
-          className="p-5 border-r border-b border-border bg-card hover:bg-primary/5 cursor-pointer group transition-colors"
+          className="p-5 border-r border-b border-border bg-card hover:border-primary/50 cursor-pointer group transition-all duration-300"
           onClick={() => onCardClick('/analytics#' + slug(t.name))}
+          onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 0 16px var(--primary-glow-sm)")}
+          onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "none")}
         >
           <div className="flex items-start justify-between mb-2">
             <div>
@@ -609,9 +613,8 @@ function ShopSection({ onCardClick, onNavigate: _onNavigate }: { onCardClick: (p
       {products.map((p) => (
         <div
           key={p.name}
-          className="border border-border bg-card p-5 w-44 flex flex-col hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group"
+          className="border border-border bg-card p-5 w-full flex flex-col hover:border-primary/50 transition-all cursor-pointer group"
           onClick={() => onCardClick('/shop#' + slug(p.name))}
-          style={{ minWidth: 176 }}
         >
           <div className="h-5 mb-3">
             {p.tag && (
@@ -647,6 +650,7 @@ function AppContent() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [authOpen, setAuthOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [primaryColor, setPrimaryColor] = useState("#00d4ff");
   const navigate = useNavigate();
   const posthog = usePostHog();
@@ -730,13 +734,13 @@ function AppContent() {
           STANDING TIGER
         </button>
 
-        <div className="flex items-center gap-7">
+        <div className="hidden md:flex items-center gap-7">
           {PAGE_CONFIG.map((page, i) => (
             <button
               key={page.id}
               onClick={() => navigateTo(i)}
-              className="flex items-center gap-1.5 font-mono text-[9px] tracking-widest transition-colors"
-              style={{ color: active === i ? "var(--primary)" : "var(--muted-foreground)" }}
+              className="flex items-center gap-1.5 font-mono text-[10.5px] tracking-widest transition-colors"
+              style={{ color: active === i ? "var(--primary)" : "var(--foreground)" }}
             >
               {active === i && (
                 <span style={{ color: "var(--primary)", fontSize: 8 }}>▸</span>
@@ -747,7 +751,7 @@ function AppContent() {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="font-mono text-[9px] tabular-nums" style={{ color: "var(--muted-foreground)" }}>
+          <div className="hidden min-[900px]:block font-mono text-[9px] tabular-nums" style={{ color: "var(--muted-foreground)" }}>
             <span style={{ color: "var(--primary)" }}>{String(active + 1).padStart(2, "0")}</span>
             {` / ${String(PAGE_CONFIG.length).padStart(2, "0")}`}
           </div>
@@ -772,7 +776,40 @@ function AppContent() {
               LOGIN
             </button>
           )}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="flex md:hidden items-center justify-center"
+            style={{ color: "var(--foreground)" }}
+          >
+            {menuOpen ? <X size={16} /> : <Menu size={16} />}
+          </button>
         </div>
+
+        {/* Mobile dropdown */}
+        {menuOpen && (
+          <div
+            className="absolute top-full left-0 right-0 flex flex-col md:hidden"
+            style={{
+              background: "var(--bg-nav)",
+              backdropFilter: "blur(12px)",
+              borderBottom: "1px solid var(--primary-glow-border)",
+            }}
+          >
+            {PAGE_CONFIG.map((page, i) => (
+              <button
+                key={page.id}
+                onClick={() => { navigateTo(i); setMenuOpen(false); }}
+                className="flex items-center gap-1.5 font-mono text-[10.5px] tracking-widest transition-colors px-8 py-3 text-left"
+                style={{ color: active === i ? "var(--primary)" : "var(--foreground)" }}
+              >
+                {active === i && (
+                  <span style={{ color: "var(--primary)", fontSize: 8 }}>▸</span>
+                )}
+                {page.label}
+              </button>
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* Horizontal scroll container */}

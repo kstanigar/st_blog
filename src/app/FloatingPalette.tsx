@@ -3,13 +3,13 @@ import { useState, useEffect } from "react";
 const DEV_PALETTE = import.meta.env.VITE_DEV_PALETTE === "true";
 
 const SKINS = [
-  { id: "cyan",         label: "CYAN",         hue: 200, free: true  },
+  { id: "cyan",         label: "COOL",         hue: 200, free: true  },
   { id: "neon_ghost",   label: "NEON GHOST",   hue: 290, free: false },
   { id: "toxic",        label: "TOXIC",        hue: 140, free: false },
-  { id: "solar_flare",  label: "SOLAR FLARE",  hue: 50,  free: false },
-  { id: "ivory_static", label: "IVORY STATIC", hue: 60,  free: false },
+  { id: "solar_flare",  label: "SOLAR FLARE",  hue: 342, free: false },
+  { id: "ivory_static", label: "IVORY STATIC", hue: 106, free: false },
   { id: "blood_code",   label: "BLOOD CODE",   hue: 15,  free: false },
-  { id: "ember",        label: "EMBER",        hue: 30,  free: false },
+  { id: "ember",        label: "EMBER",        hue: 57,  free: false },
 ];
 
 function applyHue(hue: number) {
