@@ -739,7 +739,7 @@ function AppContent() {
             <button
               key={page.id}
               onClick={() => navigateTo(i)}
-              className="flex items-center gap-1.5 font-mono text-[10.5px] tracking-widest transition-colors"
+              className="flex items-center gap-1.5 font-mono text-[10.5px] tracking-widest transition-colors hover:underline hover:decoration-(--primary)"
               style={{ color: active === i ? "var(--primary)" : "var(--foreground)" }}
             >
               {active === i && (
@@ -799,13 +799,13 @@ function AppContent() {
               <button
                 key={page.id}
                 onClick={() => { navigateTo(i); setMenuOpen(false); }}
-                className="flex items-center gap-1.5 font-mono text-[10.5px] tracking-widest transition-colors px-8 py-3 text-left"
+                className="flex items-center justify-end gap-1.5 font-mono text-[10.5px] tracking-widest transition-colors pr-8 py-3 hover:underline hover:decoration-(--primary)"
                 style={{ color: active === i ? "var(--primary)" : "var(--foreground)" }}
               >
+                {page.label}
                 {active === i && (
                   <span style={{ color: "var(--primary)", fontSize: 8 }}>▸</span>
                 )}
-                {page.label}
               </button>
             ))}
           </div>
