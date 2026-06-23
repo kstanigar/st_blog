@@ -3,6 +3,28 @@
 
 ---
 
+## 2026-06-22 — Session 19: GitHub Pages Dev Deploy + 3-Stage Pipeline ✅
+
+**Completed this session:**
+- Finalized 3-stage deployment pipeline:
+  - Stage 1: push to `dev` → GitHub Pages auto-deploys (free, test env vars)
+  - Stage 2: manual trigger → Amplify `dev` (staging)
+  - Stage 3: PR `dev` → `main` → Amplify `main` (production, auto-deploy)
+- Updated `auth_payments_plan.md` Phase 8 — `dev` branch set to manual deploy in Amplify (cost control), full step-by-step Amplify console setup guide added
+- Created `github_pages_dev_deploy_plan.md` — full GitHub Pages dev deploy plan
+- Created `public/404.html` — SPA routing fix (rafgraph encode/decode trick for React Router on GitHub Pages)
+- Added SPA decode script to `index.html` head
+- Created `.github/workflows/deploy-dev.yml` — deploys to GitHub Pages on push to `dev`
+- Added 3 GitHub Secrets (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_STRIPE_PUBLISHABLE_KEY`)
+- Set GitHub Pages source to GitHub Actions, allowed `dev` + `main` in environment protection rules
+- Site verified live at `https://kstanigar.github.io/st_blog/`
+
+**Files changed:** `.github/workflows/deploy-dev.yml` (new), `public/404.html` (new), `github_pages_dev_deploy_plan.md` (new), `index.html`, `auth_payments_plan.md`
+
+**Next:** Amplify console setup (connect repo, set env vars per branch, add SPA rewrite rule), then Session 4C — wire `usePurchases()` into FloatingPalette
+
+---
+
 ## 2026-06-21 — Session 18: Deploy Strategy + GitHub Pages Fix ✅
 
 **Completed this session:**

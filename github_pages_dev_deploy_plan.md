@@ -168,7 +168,7 @@ jobs:
 - [x] Step 3 — Create `public/404.html` (SPA routing fix)
 - [x] Step 4 — Add decode script to `index.html` `<head>`
 - [x] Step 5 — Create `.github/workflows/deploy-dev.yml`
-- [ ] Commit + push to `dev` → verify GitHub Pages deploys at `kstanigar.github.io/st_blog/`
+- [x] Commit + push to `dev` → verify GitHub Pages deploys at `kstanigar.github.io/st_blog/`
 
 ---
 

@@ -33,6 +33,7 @@
 - [x] Session 4A — Supabase setup + DB schema + auth modal
 - [x] Session 4B — Stripe products + Checkout + webhook Edge Function
 - [x] Phase 8 — Deploy strategy: AWS Amplify for both `dev` (staging) and `main` (prod); `amplify.yml` added; `build-check.yml` CI added
+- [x] GitHub Pages dev deploy — `deploy-dev.yml` + SPA routing fix; site live at `kstanigar.github.io/st_blog/`
 - [ ] Session 4C — Wire `usePurchases()` into FloatingPalette to gate paid skins/slider/rainbow
 - [ ] Amplify console setup — connect repo, set env vars per branch, add SPA rewrite rule
 
