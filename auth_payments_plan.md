@@ -226,49 +226,109 @@ supabase/
 ### Phase 8 — Deployment Strategy (AWS Amplify — Both Environments)
 
 **Branch model:**
-- `dev` branch → Amplify staging URL — auto-deploys on push to `dev`
-- `main` branch → Amplify production URL — auto-deploys on merge from `dev`
+- `dev` branch → GitHub only for free iteration (push as many commits as needed, zero cost) + Amplify staging URL on **manual deploy only**
+- `main` branch → Amplify production URL — auto-deploys on every merge from `dev`
 - `.github/workflows/build-check.yml` — PR build-check CI (no deploy, just `pnpm build` to catch broken builds before merge)
 
-**Workflow:** feature branches → PR into `dev` (build-check CI runs, then Amplify staging deploys) → PR into `main` (build-check CI runs, then Amplify prod deploys)
+**Workflow:**
+```
+feature work → push freely to dev on GitHub (free, no Amplify build triggered)
+     ↓ when ready to preview
+manually trigger dev build in Amplify console → staging URL available
+     ↓ when approved
+PR dev → main (build-check CI runs) → merge → Amplify prod auto-deploys
+```
 
-**Environment variables — set in Amplify console per branch (not GitHub secrets):**
-- `dev` branch: test Supabase project + Stripe test keys (`pk_test_`, `sk_test_`)
-- `main` branch: live Supabase project + Stripe live keys (`pk_live_`, `sk_live_`)
+**Cost rationale:** Amplify bills per build minute (~$0.01/min). Setting `dev` to manual deploy means zero charges during active development — only pay when you explicitly want a staging preview. After AWS free tier (12 months), estimated cost ~$0.16–$0.20/month total.
+
+---
+
+**Step-by-Step Amplify Console Setup:**
+
+**Step 1 — Connect repo (main branch)**
+1. AWS Console → **Amplify** → **New app** → **Host web app**
+2. Select **GitHub** → Continue → authorize AWS Amplify
+3. Install GitHub App: pick account → **Only select repositories** → choose `kstanigar/st_blog` → **Install & Authorize**
+4. Select repo → select **main** branch → Next
+5. Amplify auto-detects `amplify.yml` from repo root → Next → **Save and deploy**
+
+`main` now auto-deploys on every push/merge.
+
+**Step 2 — Add `dev` branch + disable auto-build**
+1. App console → **Hosting** → **Branches** → **Connect branch**
+2. Select `dev` branch → Next → **Save and deploy** *(builds once on connect)*
+3. Once connected: click `dev` branch row → **Actions** → **Disable auto build**
+
+Pushes to `dev` on GitHub now cost nothing — Amplify ignores them.
+
+**Step 3 — Trigger manual deploy on `dev` (when you want a preview)**
+- Console: App console → click `dev` branch → **Run build**
+- CLI: `aws amplify start-job --app-id <id> --branch-name dev --job-type RELEASE`
+
+**Step 4 — Set environment variables per branch**
+1. App console → **Hosting** → **Environment variables** → **Manage variables**
+2. Add global defaults, then **Add variable override** per branch:
+
+| Variable | `dev` value | `main` value |
+|---|---|---|
+| `VITE_SUPABASE_URL` | test project URL | live project URL |
+| `VITE_SUPABASE_ANON_KEY` | test anon key | live anon key |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | `pk_test_...` | `pk_live_...` |
+
 - Use Stripe test card `4242 4242 4242 4242` for staging purchases
 - 2026 recommendation: use Restricted API Keys in live mode (least-privilege)
 
+**Step 5 — Add SPA rewrite rule (both branches)**
+1. App console → **Hosting** → **Rewrites and redirects** → **Add rule**
+
+| Field | Value |
+|---|---|
+| Source | `</^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|svg|txt|webp|woff|woff2|ttf|map|json)$)([^.]+$)/>` |
+| Target | `/index.html` |
+| Type | **Rewrite (200)** |
+
+**Step 6 — Allowlist domains**
+- Supabase dashboard → Auth → URL Configuration → add both Amplify URLs to redirect allowlist
+- Stripe dashboard → add both Amplify URLs to allowed origins
+
+---
+
+**`amplify.yml` — already in repo root (no changes needed):**
+```yaml
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm use 20
+        - npm install -g pnpm
+        - pnpm install
+    build:
+      commands:
+        - pnpm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+```
+
+**pnpm gotcha:** If dependency resolution errors appear in Amplify build logs, add `.npmrc` to repo root:
+```
+node-linker=hoisted
+```
+
+---
+
 **Tasks:**
-- [ ] Connect `kstanigar/st_blog` to AWS Amplify Gen 2 in Amplify console
-- [ ] Add `dev` branch in Amplify — set staging env vars (test keys)
-- [ ] Add `main` branch in Amplify — set production env vars (live keys)
-- [ ] Add `amplify.yml` to repo root:
-  ```yaml
-  version: 1
-  frontend:
-    phases:
-      preBuild:
-        commands:
-          - nvm use 20
-          - npm install -g pnpm
-          - pnpm install
-      build:
-        commands:
-          - pnpm run build
-    artifacts:
-      baseDirectory: dist
-      files:
-        - '**/*'
-    cache:
-      paths:
-        - node_modules/**/*
-  ```
-- [ ] Add SPA rewrite rule in Amplify Console → Hosting → Rewrites & Redirects (apply to both branches):
-  - Source: `</^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|svg|txt|webp|woff|woff2)$)([^.]+$)/>`
-  - Target: `/index.html`
-  - Type: `200 (Rewrite)`
-- [ ] Add production domain to Supabase Auth allowed redirect URLs
-- [ ] Add production domain to Stripe allowed origins
+- [ ] Step 1 — Connect `kstanigar/st_blog` to Amplify, `main` branch, auto-deploy
+- [ ] Step 2 — Connect `dev` branch, disable auto-build
+- [ ] Step 3 — Verify manual deploy works on `dev`
+- [ ] Step 4 — Set env vars per branch (test keys on `dev`, live keys on `main`)
+- [ ] Step 5 — Add SPA rewrite rule to both branches
+- [ ] Step 6 — Add Amplify URLs to Supabase Auth allowlist + Stripe allowed origins
 
 ### Phase 9 — Environment Variables Checklist
 ```
